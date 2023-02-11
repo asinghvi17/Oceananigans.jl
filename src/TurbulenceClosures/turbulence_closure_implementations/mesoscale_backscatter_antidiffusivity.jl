@@ -84,7 +84,7 @@ using Oceananigans.Advection: div_Uc, U_dot_∇u, U_dot_∇v
                                                                        U_dot_∇v(i, j, k, grid, cl.conserving_advection, U))
 
 @inline implicit_dissipation(i, j, k, grid, cl::MBAD, U) = ℑxᶜᵃᵃ(i, j, k, grid, implicit_dissipation_U, cl, U) +
-                                                     ℑyᵃᶜᵃ(i, j, k, grid, implicit_dissipation_V, cl, U)
+                                                           ℑyᵃᶜᵃ(i, j, k, grid, implicit_dissipation_V, cl, U)
 
 @inline implicit_dissipation(i, j, k, grid, args...) = zero(grid)
 
@@ -136,6 +136,6 @@ using Oceananigans.Advection: div_Uc, U_dot_∇u, U_dot_∇v
     model_fields = merge(velocities, tracers, auxiliary_fields)
 
     return (- div_Uc(i, j, k, grid, advection, velocities, E)
-            + implicit_dissipation(i, j, k, grid, closure, velocities)
+            - implicit_dissipation(i, j, k, grid, closure, velocities)
             - backscattered_energy(i, j, k, grid, closure, diffusivities, clock, model_fields, buoyancy))
 end      
