@@ -65,8 +65,19 @@ end
 
 using Oceananigans.Advection: div_Uc, U_dot_∇u, U_dot_∇v
 
+<<<<<<< HEAD
 # rewrite fluxes: (u⋅∇)F = ∇(u⋅F) + (F⋅∇)u
 # dissipation is the second term on the RHS (where F is ν∇u)
+=======
+@inline implicit_dissipation_U(i, j, k, grid, cl, U) = U.u[i, j, k] * (U_dot_∇u(i, j, k, grid, cl.diffusing_advection, U) - 
+                                                                       U_dot_∇u(i, j, k, grid, cl.conserving_advection, U))
+
+@inline implicit_dissipation_V(i, j, k, grid, cl, U) = U.v[i, j, k] * (U_dot_∇v(i, j, k, grid, cl.diffusing_advection, U) - 
+                                                                       U_dot_∇v(i, j, k, grid, cl.conserving_advection, U))
+
+@inline implicit_dissipation(i, j, k, grid, cl::MBAD, U) = ℑxᶜᵃᵃ(i, j, k, grid, implicit_dissipation_U, cl, U) +
+                                                           ℑyᵃᶜᵃ(i, j, k, grid, implicit_dissipation_V, cl, U)
+>>>>>>> 3e6807c97a9f3c0be324bd25e06305cc1f271129
 
 @inline ϕ²(i, j, k, grid, f, args...) = f(i, j, k, grid, args...)^2
 
