@@ -279,8 +279,8 @@ function computations_with_averaged_field_derivative(model)
     V = Field(Average(v, dims=(1, 2)))
 
     # This tests a vertical derivative of an Averaged Field
-    shear_production_op = @at (Center, Center, Center) u * w * ∂z(U)
-    shear = Field(shear_production_op)
+    vertical_shear_production_op = @at (Center, Center, Center) u * w * ∂z(U)
+    shear = Field(vertical_shear_production_op)
     compute!(shear)
 
     set!(model, T = (x, y, z) -> 3 * z)

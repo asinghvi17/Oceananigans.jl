@@ -7,7 +7,7 @@ using Oceananigans.TurbulenceClosures: ∂ⱼ_τ₁ⱼ, ∂ⱼ_τ₂ⱼ, ∇_dot
 using Oceananigans.TurbulenceClosures: immersed_∂ⱼ_τ₁ⱼ, immersed_∂ⱼ_τ₂ⱼ, immersed_∂ⱼ_τ₃ⱼ, immersed_∇_dot_qᶜ
 using Oceananigans.Advection: div_Uc, U_dot_∇u, U_dot_∇v
 
-using Oceananigans.TurbulenceClosures: shear_production, buoyancy_flux, dissipation
+using Oceananigans.TurbulenceClosures: vertical_shear_production, buoyancy_flux, dissipation
 
 import Oceananigans.TurbulenceClosures: hydrostatic_turbulent_kinetic_energy_tendency
 
@@ -170,7 +170,7 @@ end
     return ( - div_Uc(i, j, k, grid, advection, velocities, e)
              - ∇_dot_qᶜ(i, j, k, grid, closure, diffusivities, val_tracer_index, e, clock, model_fields, buoyancy)
              - immersed_∇_dot_qᶜ(i, j, k, grid, e, e_immersed_bc, closure, diffusivities, val_tracer_index, clock, model_fields)
-             + shear_production(i, j, k, grid, closure, velocities, diffusivities)
+             + vertical_shear_production(i, j, k, grid, closure, velocities, diffusivities)
              + buoyancy_flux(i, j, k, grid, closure, velocities, tracers, buoyancy, diffusivities)
              - dissipation(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
              + forcing(i, j, k, grid, clock, model_fields))

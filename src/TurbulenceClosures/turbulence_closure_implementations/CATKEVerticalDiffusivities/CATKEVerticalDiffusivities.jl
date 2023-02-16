@@ -26,7 +26,7 @@ import Oceananigans.BoundaryConditions: getbc
 import Oceananigans.Utils: with_tracers
 import Oceananigans.TurbulenceClosures:
     validate_closure,
-    shear_production,
+    vertical_shear_production,
     buoyancy_flux,
     dissipation,
     add_closure_specific_boundary_conditions,

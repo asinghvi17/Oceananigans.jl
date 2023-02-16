@@ -71,7 +71,7 @@ const ClosureKinda = Union{Nothing, AbstractTurbulenceClosure, AbstractArray{<:A
 add_closure_specific_boundary_conditions(closure::ClosureKinda, bcs, args...) = bcs
 
 # Interface for KE-based closures
-function shear_production end
+function vertical_shear_production end
 function buoyancy_flux end
 function dissipation end
 function hydrostatic_turbulent_kinetic_energy_tendency end

@@ -22,7 +22,7 @@ end
 @inline ν_∂z_u²(i, j, k, grid, ν, u) = ℑxᶠᵃᵃ(i, j, k, grid, ν) * ∂zᶠᶜᶠ(i, j, k, grid, u)^2
 @inline ν_∂z_v²(i, j, k, grid, ν, v) = ℑyᵃᶠᵃ(i, j, k, grid, ν) * ∂zᶜᶠᶠ(i, j, k, grid, v)^2
 
-@inline function shear_production(i, j, k, grid, closure::FlavorOfCATKE, velocities, diffusivities)
+@inline function vertical_shear_production(i, j, k, grid, closure::FlavorOfCATKE, velocities, diffusivities)
     Kᵘ = diffusivities.Kᵘ
     u = velocities.u
     v = velocities.v
@@ -107,18 +107,18 @@ end
 
 # TODO: include shear production and buoyancy flux from AbstractScalarDiffusivity
 
-@inline shear_production(i, j, k, grid, closure, velocities, diffusivities) = zero(grid)
-@inline shear_production(i, j, k, grid, closures::Tuple{<:Any}, velocities, diffusivities) =
-    shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1])
+@inline vertical_shear_production(i, j, k, grid, closure, velocities, diffusivities) = zero(grid)
+@inline vertical_shear_production(i, j, k, grid, closures::Tuple{<:Any}, velocities, diffusivities) =
+    vertical_shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1])
 
-@inline shear_production(i, j, k, grid, closures::Tuple{<:Any, <:Any}, velocities, diffusivities) =
-    shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1]) +
-    shear_production(i, j, k, grid, closures[2], velocities, diffusivities[2])
+@inline vertical_shear_production(i, j, k, grid, closures::Tuple{<:Any, <:Any}, velocities, diffusivities) =
+    vertical_shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1]) +
+    vertical_shear_production(i, j, k, grid, closures[2], velocities, diffusivities[2])
 
-@inline shear_production(i, j, k, grid, closures::Tuple{<:Any, <:Any, <:Any}, velocities, diffusivities) =
-    shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1]) +
-    shear_production(i, j, k, grid, closures[2], velocities, diffusivities[2]) +
-    shear_production(i, j, k, grid, closures[3], velocities, diffusivities[3])
+@inline vertical_shear_production(i, j, k, grid, closures::Tuple{<:Any, <:Any, <:Any}, velocities, diffusivities) =
+    vertical_shear_production(i, j, k, grid, closures[1], velocities, diffusivities[1]) +
+    vertical_shear_production(i, j, k, grid, closures[2], velocities, diffusivities[2]) +
+    vertical_shear_production(i, j, k, grid, closures[3], velocities, diffusivities[3])
 
 @inline buoyancy_flux(i, j, k, grid, closure, velocities, tracers, buoyancy, diffusivities) = zero(grid)
 @inline buoyancy_flux(i, j, k, grid, closures::Tuple{<:Any}, velocities, tracers, buoyancy, diffusivities) =
