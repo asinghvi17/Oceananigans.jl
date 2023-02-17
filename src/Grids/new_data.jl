@@ -56,7 +56,12 @@ with indices corresponding to a field on a `grid` of `size(grid)` and located at
 function new_data(FT::DataType, grid::AbstractGrid, loc, indices=default_indices(length(loc)))
     arch = architecture(grid)
     Tx, Ty, Tz = total_size(loc, grid, indices)
-    underlying_data = zeros(FT, arch, Tx, Ty, Tz)
+    if length(methods(encoded_index)) > 1
+        underlying_data = zeros(FT, arch, Tx, Ty * Tz)
+        underlying_data = GilbertArray(underlying_data, (Tx, Ty, Tz))
+    else
+        underlying_data = zeros(FT, arch, Tx, Ty, Tz)
+    end
     indices = validate_indices(indices, loc, grid)
     return offset_data(underlying_data, grid, loc, indices)
 end

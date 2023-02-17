@@ -254,7 +254,8 @@ function RectilinearGrid(architecture::AbstractArchitecture = CPU(),
                          z = nothing,
                          halo = nothing,
                          extent = nothing,
-                         topology = (Periodic, Periodic, Bounded))
+                         topology = (Periodic, Periodic, Bounded),
+                         space_filling_curve = true)
 
     if architecture == GPU() && !has_cuda() 
         throw(ArgumentError("Cannot create a GPU grid. No CUDA-enabled GPU was detected!"))
@@ -268,7 +269,11 @@ function RectilinearGrid(architecture::AbstractArchitecture = CPU(),
     Lx, xᶠᵃᵃ, xᶜᵃᵃ, Δxᶠᵃᵃ, Δxᶜᵃᵃ = generate_coordinate(FT, topology[1], Nx, Hx, x, architecture)
     Ly, yᵃᶠᵃ, yᵃᶜᵃ, Δyᵃᶠᵃ, Δyᵃᶜᵃ = generate_coordinate(FT, topology[2], Ny, Hy, y, architecture)
     Lz, zᵃᵃᶠ, zᵃᵃᶜ, Δzᵃᵃᶠ, Δzᵃᵃᶜ = generate_coordinate(FT, topology[3], Nz, Hz, z, architecture)
- 
+
+    if space_filling_curve
+        generate_methods((Ny+2Hy, Nz+2Hz))
+    end
+
     return RectilinearGrid{TX, TY, TZ}(architecture,
                                        Nx, Ny, Nz,
                                        Hx, Hy, Hz,

@@ -180,7 +180,8 @@ function LatitudeLongitudeGrid(architecture::AbstractArchitecture = CPU(),
                                radius = R_Earth,
                                topology = nothing,
                                precompute_metrics = true,
-                               halo = nothing)
+                               halo = nothing,
+                               space_filling_curve = true)
   
     if architecture == GPU() && !has_cuda() 
         throw(ArgumentError("Cannot create a GPU grid. No CUDA-enabled GPU was detected!"))
@@ -193,6 +194,10 @@ function LatitudeLongitudeGrid(architecture::AbstractArchitecture = CPU(),
     # A direction is regular if the domain passed is a Tuple{<:Real, <:Real}, 
     # it is stretched if being passed is a function or vector (as for the VerticallyStretchedRectilinearGrid)
     TX, TY, TZ = topology
+
+    if space_filling_curve
+        generate_methods((Nφ+2Hφ, Nz+2Hz))
+    end
     
     Lλ, λᶠᵃᵃ, λᶜᵃᵃ, Δλᶠᵃᵃ, Δλᶜᵃᵃ = generate_coordinate(FT, TX, Nλ, Hλ, longitude, architecture)
     Lφ, φᵃᶠᵃ, φᵃᶜᵃ, Δφᵃᶠᵃ, Δφᵃᶜᵃ = generate_coordinate(FT, TY, Nφ, Hφ, latitude,  architecture)

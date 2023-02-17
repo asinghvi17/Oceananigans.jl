@@ -12,11 +12,13 @@ export OrthogonalSphericalShellGrid, ConformalCubedSphereGrid
 export node, xnode, ynode, znode, xnodes, ynodes, znodes, nodes
 export offset_data, new_data
 export on_architecture
+export encoded_index, decoded_index
 
 using CUDA
 using CUDA: has_cuda
 using Adapt
 using OffsetArrays
+using GilbertCurves
 
 using Oceananigans
 using Oceananigans.Architectures
@@ -130,7 +132,11 @@ abstract type AbstractHorizontallyCurvilinearGrid{FT, TX, TY, TZ, Arch} <: Abstr
 
 isrectilinear(grid) = false
 
+@inline encoded_index(::Val{(0, 0)}) = 0
+@inline decoded_index(::Val{0})      = (0, 0)
+
 include("grid_utils.jl")
+include("gilbert_arrays.jl")
 include("zeros_and_ones.jl")
 include("new_data.jl")
 include("inactive_node.jl")
