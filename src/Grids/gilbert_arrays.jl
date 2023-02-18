@@ -92,3 +92,39 @@ function GilbertArray(FT, arch, sz)
     encoder_functions = Tuple(eval(Symbol(:encoded_index, curve-1)) for curve in 1:length(grid_sizes))
     return GilbertArray(underlying_data, nested_sizes, tuple(cumulative_sizes[1:end-1]...), tuple(cumulative_sizes[2:end]...), encoder_functions)
 end
+
+"""
+diagnostic to investigate the memory layout of a `GilbertArray`.
+returns the order of indices in x, y and z and the three-dimensionally
+ordered `(c_ord_x, c_ord_y, c_ord_z)`
+"""
+function memory_layout(h::GilbertArray)
+    nx, ny, nz = size(h)
+    index = []
+    list  = []
+    c_ord_x = Int[]
+    c_ord_y = Int[]
+    c_ord_z = Int[]
+    for i in 1:nx, j in 1:ny, k in 1:nz
+        push!(list, (i, j, k))
+        push!(c_ord_x, i)
+        push!(c_ord_y, j)
+        push!(c_ord_z, k)
+        push!(index, ijk2h(i, j, k, h.previous_sizes, h.nested_sizes, h.encoder_functions))
+    end
+
+    perm = sortperm(index)
+    list = list[perm]
+
+    c_x = Int[]
+    c_y = Int[]
+    c_z = Int[]
+
+    for l in list
+        push!(c_x, l[1])
+        push!(c_y, l[2])
+        push!(c_z, l[3])
+    end
+
+    return c_x, c_y, c_z, c_ord_x, c_ord_y, c_ord_z
+end 
