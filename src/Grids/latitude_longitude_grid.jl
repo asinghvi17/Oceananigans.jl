@@ -196,7 +196,7 @@ function LatitudeLongitudeGrid(architecture::AbstractArchitecture = CPU(),
     TX, TY, TZ = topology
 
     if space_filling_curve
-        generate_methods((Nφ+2Hφ, Nz+2Hz))
+        generate_encoder_methods((Nλ+2Hλ, Nφ+2Hφ, Nz+2Hz))
     end
     
     Lλ, λᶠᵃᵃ, λᶜᵃᵃ, Δλᶠᵃᵃ, Δλᶜᵃᵃ = generate_coordinate(FT, TX, Nλ, Hλ, longitude, architecture)

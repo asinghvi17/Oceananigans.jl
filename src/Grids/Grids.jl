@@ -132,8 +132,8 @@ abstract type AbstractHorizontallyCurvilinearGrid{FT, TX, TY, TZ, Arch} <: Abstr
 
 isrectilinear(grid) = false
 
-@inline encoded_index(::Val{(0, 0)}) = 0
-@inline decoded_index(::Val{0})      = (0, 0)
+@inline encoded_index0(::Val{(0, 0, 0)}) = 0
+@inline decoded_index0(::Val{0})         = (0, 0, 0)
 
 include("grid_utils.jl")
 include("gilbert_arrays.jl")

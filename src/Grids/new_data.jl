@@ -56,9 +56,13 @@ with indices corresponding to a field on a `grid` of `size(grid)` and located at
 function new_data(FT::DataType, grid::AbstractGrid, loc, indices=default_indices(length(loc)))
     arch = architecture(grid)
     Tx, Ty, Tz = total_size(loc, grid, indices)
-    if length(methods(encoded_index)) > 1
-        underlying_data = zeros(FT, arch, Tx, Ty * Tz)
-        underlying_data = GilbertArray(underlying_data, (Tx, Ty, Tz))
+
+    use_space_filling_curve = length(methods(encoded_index0)) > 1 &&
+                              indices == default_indices(length(loc)) && 
+                              all(loc .!= Nothing)
+
+    if use_space_filling_curve
+        underlying_data = GilbertArray(FT, arch, (Tx, Ty, Tz))
     else
         underlying_data = zeros(FT, arch, Tx, Ty, Tz)
     end

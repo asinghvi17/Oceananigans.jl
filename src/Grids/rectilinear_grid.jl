@@ -271,7 +271,7 @@ function RectilinearGrid(architecture::AbstractArchitecture = CPU(),
     Lz, zᵃᵃᶠ, zᵃᵃᶜ, Δzᵃᵃᶠ, Δzᵃᵃᶜ = generate_coordinate(FT, topology[3], Nz, Hz, z, architecture)
 
     if space_filling_curve
-        generate_methods((Ny+2Hy, Nz+2Hz))
+        generate_encoder_methods((Nx+2Hx, Ny+2Hy, Nz+2Hz))
     end
 
     return RectilinearGrid{TX, TY, TZ}(architecture,
