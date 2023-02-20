@@ -141,8 +141,9 @@ with_halo(halo, ibg::ImmersedBoundaryGrid) = ImmersedBoundaryGrid(with_halo(halo
 
 # ImmersedBoundaryGrids require an extra halo point to check the "inactivity" of a `Face` node at N + H 
 # (which requires checking `Center` nodes at N + H and N + H + 1)
-inflate_halo_size_one_dimension(req_H, old_H, _, ::IBG)            = max(req_H + 1, old_H)
-inflate_halo_size_one_dimension(req_H, old_H, ::Type{Flat}, ::IBG) = 0
+inflate_halo_size_one_dimension(req_H, old_H, _, ::IBG)               = max(req_H + 1, old_H)
+inflate_halo_size_one_dimension(req_H, old_H, ::Type{Flat},    ::IBG) = 0
+inflate_halo_size_one_dimension(req_H, old_H, ::Type{Bounded}, ::IBG) = 2
 
 @inline bottom(i, j, k, ibg::IBG) = error("The function `bottom` has not been defined for $(summary(ibg))!")
 

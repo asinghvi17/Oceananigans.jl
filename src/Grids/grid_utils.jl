@@ -85,7 +85,6 @@ total_size(loc, grid) = (total_length(loc[1], topology(grid, 1), grid.Nx, grid.H
                          total_length(loc[2], topology(grid, 2), grid.Ny, grid.Hy),
                          total_length(loc[3], topology(grid, 3), grid.Nz, grid.Hz))
 
-
 function total_size(loc, grid, indices::Tuple)
     sz = total_size(loc, grid)
     return Tuple(ind isa Colon ? sz[i] : min(length(ind), sz[i]) for (i, ind) in enumerate(indices))
@@ -96,7 +95,12 @@ function Base.size(loc, grid::AbstractGrid, indices::Tuple)
     return Tuple(ind isa Colon ? sz[i] : min(length(ind), sz[i]) for (i, ind) in enumerate(indices))
 end
 
-
+function total_data_size(loc, grid, indices::Tuple)
+    N  = size(grid)
+    H  = halo_size(grid)
+    sz = N .+ 2 .* H
+    return Tuple(ind isa Colon ? sz[i] : min(length(ind), sz[i]) for (i, ind) in enumerate(indices))
+end
 
 """
     halo_size(grid)

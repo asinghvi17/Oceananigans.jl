@@ -5,11 +5,11 @@ is (in one dimension) shown below
 ```
 face   cell   face   cell   face
 
-        i-1            i
+        i-0x1            i
          ↓             ↓
   |      ×      |      ×      |
   ↑             ↑             ↑
- i-1            i            i+1
+ i-0x1            i            i+0x1
 ```
 Difference operators are denoted by a `δ` (`\delta`). Calculating the difference
 of a cell-centered quantity `c` at cell `i` returns the difference at face `i`

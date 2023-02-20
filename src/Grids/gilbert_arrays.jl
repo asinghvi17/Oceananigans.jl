@@ -7,12 +7,13 @@ this function leverages the `gilbertindices` function in the `GilbertCurves` pac
 to generate methods for nested encoding functions that from an input `(i, j, k)`
 return the associated gilbert index `h`
 """
-function generate_encoder_methods(size)
+function generate_encoder_methods(size, loc)
     # Find optimal configuration for size and curves
     Nx, Ny, Nz = find_factorizations(size)
     curve = 0
     for (nx, ny, nz) in zip(Nx, Ny, Nz)
-        encoder_func = Symbol(:encoded_index, curve)
+        encoder_func = isnothing(loc) ? Symbol(:encoded_index, curve) : 
+                                        Symbol(:encoded_index, curve, loc)
 
         list = GilbertCurves.gilbertindices((nx, ny, nz))
         for (idx, l) in enumerate(list)
@@ -78,7 +79,7 @@ Base.size(h::GilbertArray, dim) = h.cumulative_sizes[end][dim]
     return encoder(Val((hijk)))
 end
 
-function GilbertArray(FT, arch, sz)
+function GilbertArray(FT, arch, sz, loc)
     nested_sizes  = find_factorizations(sz)  
     nested_sizes  = Tuple((nx, ny, nz) for (nx, ny, nz) in zip(nested_sizes...))
     grid_sizes    = prod.(nested_sizes)
@@ -88,11 +89,25 @@ function GilbertArray(FT, arch, sz)
         push!(cumulative_sizes, cumulative_sizes[i] .* n)
         i+=1
     end
+
     underlying_data   = zeros(FT, arch, grid_sizes...)
-    encoder_functions = Tuple(eval(Symbol(:encoded_index, curve-1)) for curve in 1:length(grid_sizes))
+    encoder_functions = Tuple(retrieve_func(curve-1, loc) for curve in 1:length(grid_sizes))
     return GilbertArray(underlying_data, nested_sizes, tuple(cumulative_sizes[1:end-1]...), tuple(cumulative_sizes[2:end]...), encoder_functions)
 end
 
+@inline retrieve_func(curve, loc) = 
+        loc[1] == Face ? Symbol(:encoded_index, curve, :fcc) :
+        loc[2] == Face ? Symbol(:encoded_index, curve, :cfc) :
+        loc[3] == Face ? Symbol(:encoded_index, curve, :ccf) :
+                         Symbol(:encoded_index, curve)
+
+Adapt.adapt_structure(to, h::GilbertArray) = 
+    GilbertArray(Adapt.adapt(to, h.underlying_data), 
+                 Adapt.adapt(to, h.nested_sizes),
+                 Adapt.adapt(to, h.previous_sizes),
+                 Adapt.adapt(to, h.cumulative_sizes),
+                 Adapt.adapt(to, h.encoder_functions))
+    
 """
 diagnostic to investigate the memory layout of a `GilbertArray`.
 returns the order of indices in x, y and z and the three-dimensionally

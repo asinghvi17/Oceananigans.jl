@@ -153,14 +153,19 @@ function HydrostaticFreeSurfaceModel(; grid,
     # Put CATKE first in the list of closures
     closure = validate_closure(closure)
 
+    @show "initilizing velocity"
     # Either check grid-correctness, or construct tuples of fields
     velocities         = HydrostaticFreeSurfaceVelocityFields(velocities, grid, clock, boundary_conditions)
+    @show "initilizing tracers"
     tracers            = TracerFields(tracers, grid, boundary_conditions)
+    @show "initilizing pressure"
     pressure           = PressureField(grid)
+    @show "initilizing diffusivity"
     diffusivity_fields = DiffusivityFields(diffusivity_fields, grid, tracernames(tracers), boundary_conditions, closure)
 
     @apply_regionally validate_velocity_boundary_conditions(velocities)
 
+    @show "initilizing free surface"
     free_surface = FreeSurface(free_surface, velocities, grid)
 
     # Instantiate timestepper if not already instantiated
