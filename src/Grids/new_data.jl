@@ -57,12 +57,12 @@ function new_data(FT::DataType, grid::AbstractGrid, loc, indices=default_indices
     arch = architecture(grid)
     Tx, Ty, Tz = total_size(loc, grid, indices)
 
-    use_space_filling_curve = length(methods(encoded_index0)) > 1 &&
+    use_space_filling_curve = space_filling_curve(grid) &&
                               indices == default_indices(length(loc)) && 
                               all(loc .!= Nothing)
 
     if use_space_filling_curve
-        underlying_data = GilbertArray(FT, arch, (Tx, Ty, Tz))
+        underlying_data = MortonArray(FT, arch, (Tx, Ty, Tz))
     else
         underlying_data = zeros(FT, arch, Tx, Ty, Tz)
     end

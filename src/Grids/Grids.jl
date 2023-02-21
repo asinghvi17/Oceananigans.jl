@@ -136,7 +136,7 @@ isrectilinear(grid) = false
 @inline decoded_index0(::Val{0})         = (0, 0, 0)
 
 include("grid_utils.jl")
-include("gilbert_arrays.jl")
+include("morton_arrays.jl")
 include("zeros_and_ones.jl")
 include("new_data.jl")
 include("inactive_node.jl")
