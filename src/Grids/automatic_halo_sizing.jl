@@ -20,8 +20,9 @@ function required_halo_size end
 
 required_halo_size(tendency_term) = 1
 
-inflate_halo_size_one_dimension(req_H, old_H, _, grid)            = max(req_H, old_H)
-inflate_halo_size_one_dimension(req_H, old_H, ::Type{Flat}, grid) = 0
+inflate_halo_size_one_dimension(req_H, old_H, _, grid)               = max(req_H, old_H)
+inflate_halo_size_one_dimension(req_H, old_H, ::Type{Flat}, grid)    = 0
+inflate_halo_size_one_dimension(req_H, old_H, ::Type{Bounded}, grid) = 1
 
 function inflate_halo_size(Hx, Hy, Hz, grid, tendency_terms...)
     topo = topology(grid)
