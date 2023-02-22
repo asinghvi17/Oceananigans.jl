@@ -61,15 +61,10 @@ function new_data(FT::DataType, grid::AbstractGrid, loc, indices=default_indices
                               indices == default_indices(length(loc)) && 
                               all(loc .!= Nothing)
 
-    @show loc, use_space_filling_curve
     if use_space_filling_curve
         underlying_data = MortonArray(FT, arch, (Tx, Ty, Tz))
     else
         underlying_data = zeros(FT, arch, Tx, Ty, Tz)
-    end
-    @show typeof(underlying_data)
-    if underlying_data isa GilbertArray
-        @show typeof(underlying_data.underlying_data)
     end
     indices = validate_indices(indices, loc, grid)
     return offset_data(underlying_data, grid, loc, indices)

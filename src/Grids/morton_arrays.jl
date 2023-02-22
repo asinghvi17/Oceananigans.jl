@@ -2,87 +2,51 @@
     struct MortonArray{T, N} <: AbstractArray{T, 3}
 
 A three dimensional array organized in memory as Morton curve. 
-The array is indexed in with `[i, j, k] <= prod.(nested_sizes)`
-The `underlying_data` is a N-dimensional array with `N = length(cumulative_sizes)` and is
-indexed in with `[h₁, h₂,... hₙ] <= grid_sizes` where `h` are all `gilbertindices`
+The array is indexed in with `arr[i, j, k]` and picks from memory at location
+`arr.underlying_data[morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...]`
 """
 struct MortonArray{T} <: AbstractArray{T, 3}
-    underlying_data   :: AbstractArray{T, 1}
+    underlying_data   :: AbstractArray{T, 3}
     min_axis          :: Int
-    array_size        :: Tuple
+    Nx2               :: Int
+    Ny2               :: Int
 end
 
 using Base: @propagate_inbounds
 
-@propagate_inbounds Base.getindex(h::MortonArray, i, j, k)       =  getindex(h.underlying_data,      morton_encode3d(i, j, k, h.min_axis)...)
-@propagate_inbounds Base.setindex!(h::MortonArray, val, i, j, k) = setindex!(h.underlying_data, val, morton_encode3d(i, j, k, h.min_axis)...)
-@propagate_inbounds Base.lastindex(h::MortonArray)               = lastindex(size(h))
-@propagate_inbounds Base.lastindex(h::MortonArray, dim)          = lastindex(size(h, dim))
+@propagate_inbounds Base.getindex(h::MortonArray, i, j, k)       =  getindex(h.underlying_data,      morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...)
+@propagate_inbounds Base.setindex!(h::MortonArray, val, i, j, k) = setindex!(h.underlying_data, val, morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...)
+@propagate_inbounds Base.lastindex(h::MortonArray)               = lastindex(h.underlying_data)
+@propagate_inbounds Base.lastindex(h::MortonArray, dim)          = lastindex(h.underlying_data, dim)
 
-Base.size(h::MortonArray)      = h.array_size
-Base.size(h::MortonArray, dim) = h.array_size[dim]
+Base.size(h::MortonArray)      = size(h.underlying_data)
+Base.size(h::MortonArray, dim) = size(h.underlying_data, dim)
 
 function MortonArray(FT, arch, underlying_size)
     Nx, Ny, Nz = underlying_size
 
-    underlying_data   = zeros(FT, arch, Nx * Ny * Nz)
-
     Nx2 = Base.nextpow(2, Nx)
     Ny2 = Base.nextpow(2, Ny)
     Nz2 = Base.nextpow(2, Nz)
+
+    underlying_data   = zeros(FT, arch, Nx, Ny, Nz)
+
     min_axis = min(ndigits(Nx2, base = 2), ndigits(Ny2, base = 2), ndigits(Nz2, base = 2))
 
-    return MortonArray(underlying_data, min_axis, underlying_size)
+    return MortonArray(underlying_data, min_axis, underlying_size, Nx2, Ny2)
 end
-
-Adapt.adapt_structure
-
-"""
-diagnostic to investigate the memory layout of a `MortonArray`.
-returns the order of indices in x, y and z and the three-dimensionally
-ordered `(c_ord_x, c_ord_y, c_ord_z)`
-"""
-function memory_layout(h::MortonArray)
-    nx, ny, nz = size(h)
-    index = []
-    list  = []
-    c_ord_x = Int[]
-    c_ord_y = Int[]
-    c_ord_z = Int[]
-    for i in 1:nx, j in 1:ny, k in 1:nz
-        push!(list, (i, j, k))
-        push!(c_ord_x, i)
-        push!(c_ord_y, j)
-        push!(c_ord_z, k)
-        push!(index, morton_encode3d(i, j, k, h.min_axis))
-    end
-
-    perm = sortperm(index)
-    list = list[perm]
-
-    c_x = Int[]
-    c_y = Int[]
-    c_z = Int[]
-
-    for l in list
-        push!(c_x, l[1])
-        push!(c_y, l[2])
-        push!(c_z, l[3])
-    end
-
-    return c_x, c_y, c_z, c_ord_x, c_ord_y, c_ord_z
-end 
 
 """
     function morton_encode3d(i, j, k, min_axis)
 
-returns the encoded morton index corresponding to 3D index (i, j, k).
+returns the encoded morton index corresponding to a 3D cartesian index (i, j, k).
 `min_axis` is the minimum between the number of bits of the smallest powers
 of 2 larger than the data size
 """
-@inline function morton_encode3d(i, j, k, min_axis)
+function morton_encode3d(i, j, k, min_axis, Nx, Ny)
 	i = i - 1
 	j = j - 1
+	k = k - 1
 
     d = 0
     pos = 0
@@ -97,7 +61,15 @@ of 2 larger than the data size
         d |= temp << pos
         pos = pos + 3
 	end
-    d |= (i | j | k) << pos
+	d |= (i | j | k) << pos
 
-    return d + 1
+	# now we have that
+	# d = i + Nx * (j + Ny * k)
+
+	ri  = mod(d, Nx)
+	tmp = (d - ri) ÷ Nx
+	rj  = mod(tmp, Ny)
+	rk  = (tmp - rj)÷ Ny
+
+	return ri+0x1, rj+0x1, rk+0x1
 end
