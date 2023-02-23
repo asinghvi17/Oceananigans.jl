@@ -4,7 +4,7 @@ using Oceananigans.Architectures: arch_array
 import Oceananigans.Fields: condition_operand, conditional_length, set!, compute_at!, indices
 
 # For conditional reductions such as mean(u * v, condition = u .> 0))
-struct ConditionalOperation{LX, LY, LZ, O, F, G, C, M, T} <: AbstractOperation{LX, LY, LZ, G, T} 
+struct ConditionalOperation{LX, LY, LZ, O, F, G, C, M, T} <: AbstractOperation{LX, LY, LZ, G, T}
     operand :: O
     func :: F
     grid :: G
@@ -37,15 +37,17 @@ Keyword arguments
 - `func`: A unary transformation applied element-wise to the field `operand` at locations where
           `condition == true`. Default is `identity`.
 
-- `condition`: either a function of `(i, j, k, grid, operand)` returning a Boolean,
+- `condition`: either a function of `(i, j, k, grid, operand)` that returns a Boolean,
                or a 3-dimensional Boolean `AbstractArray`. At locations where `condition == false`,
-               operand will be masked by `mask`
+               operand will be masked by `mask`.
 
-- `mask`: the scalar mask
+- `mask`: the scalar mask.
 
-`condition_operand` is a convenience function used to construct a `ConditionalOperation`
+`condition_operand` is a convenience function used to construct a `ConditionalOperation`, i.e.,
 
-`condition_operand(func::Function, operand::AbstractField, condition, mask) = ConditionalOperation(operand; func, condition, mask)`
+```
+condition_operand(func::Function, operand::AbstractField, condition, mask) = ConditionalOperation(operand; func, condition, mask)
+```
 
 Example
 =======
@@ -111,13 +113,13 @@ end
 
 Adapt.adapt_structure(to, c::ConditionalOperation{LX, LY, LZ}) where {LX, LY, LZ} =
             ConditionalOperation{LX, LY, LZ}(adapt(to, c.operand),
-                                     adapt(to, c.func), 
+                                     adapt(to, c.func),
                                      adapt(to, c.grid),
                                      adapt(to, c.condition),
                                      adapt(to, c.mask))
 
-@inline function Base.getindex(c::ConditionalOperation, i, j, k) 
-    return ifelse(get_condition(c.condition, i, j, k, c.grid, c), 
+@inline function Base.getindex(c::ConditionalOperation, i, j, k)
+    return ifelse(get_condition(c.condition, i, j, k, c.grid, c),
                   c.func(getindex(c.operand, i, j, k)),
                   c.mask)
 end
@@ -134,7 +136,7 @@ end
 @inline get_condition(condition::AbstractArray, i, j, k, grid, args...) = @inbounds condition[i, j, k]
 
 Base.summary(c::ConditionalOperation) = string("ConditionalOperation of ", summary(c.operand), " with condition ", summary(c.condition))
-    
+
 compute_at!(c::ConditionalOperation, time) = compute_at!(c.operand, time)
 
 indices(c::ConditionalOperation) = indices(c.operand)
