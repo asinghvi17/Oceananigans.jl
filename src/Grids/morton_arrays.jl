@@ -37,7 +37,9 @@ function MortonArray(FT, arch, underlying_size)
     return MortonArray{FT}(underlying_data, min_axis, underlying_size)
 end
 
-Adapt.adapt_structure(to, mo::MortonArray) = MortonArray(Adapt.adapt(to, mo.underlying_data), mo.min_axis, mo.underlying_size)
+Adapt.adapt_structure(to, mo::MortonArray{FT}) where FT = 
+    MortonArray{FT}(Adapt.adapt(to, mo.underlying_data), mo.min_axis, mo.underlying_size)
+
 """
     function morton_encode3d(i, j, k, min_axis)
 
