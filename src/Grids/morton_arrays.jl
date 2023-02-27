@@ -6,7 +6,7 @@ The array is indexed in with `arr[i, j, k]` and picks from memory at location
 `arr.underlying_data[morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...]`
 """
 struct MortonArray{T} <: AbstractArray{T, 3}
-    underlying_data   :: AbstractArray{T, 3}
+    underlying_data   :: AbstractArray{T, 1}
     min_axis          :: Int
     Nx2               :: Int
     Ny2               :: Int
@@ -14,8 +14,8 @@ end
 
 using Base: @propagate_inbounds
 
-@propagate_inbounds Base.getindex(h::MortonArray, i, j, k)       =  getindex(h.underlying_data,      morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...)
-@propagate_inbounds Base.setindex!(h::MortonArray, val, i, j, k) = setindex!(h.underlying_data, val, morton_encode3d(i, j, k, h.min_axis, h.Nx2, h.Ny2)...)
+@propagate_inbounds Base.getindex(h::MortonArray, i, j, k)       =  getindex(h.underlying_data,      morton_encode3d(i, j, k, h.min_axis)...)
+@propagate_inbounds Base.setindex!(h::MortonArray, val, i, j, k) = setindex!(h.underlying_data, val, morton_encode3d(i, j, k, h.min_axis)...)
 @propagate_inbounds Base.lastindex(h::MortonArray)               = lastindex(h.underlying_data)
 @propagate_inbounds Base.lastindex(h::MortonArray, dim)          = lastindex(h.underlying_data, dim)
 
@@ -29,7 +29,7 @@ function MortonArray(FT, arch, underlying_size)
     Ny2 = Base.nextpow(2, Ny)
     Nz2 = Base.nextpow(2, Nz)
 
-    underlying_data   = zeros(FT, arch, Nx, Ny, Nz)
+    underlying_data   = zeros(FT, arch, Nx * Ny * Nz)
 
     min_axis = min(ndigits(Nx2, base = 2), ndigits(Ny2, base = 2), ndigits(Nz2, base = 2))
 
@@ -66,10 +66,5 @@ function morton_encode3d(i, j, k, min_axis, Nx, Ny)
 	# now we have that
 	# d = i + Nx * (j + Ny * k)
 
-	ri  = mod(d, Nx)
-	tmp = (d - ri) ÷ Nx
-	rj  = mod(tmp, Ny)
-	rk  = (tmp - rj)÷ Ny
-
-	return ri+0x1, rj+0x1, rk+0x1
+	return d+1
 end
