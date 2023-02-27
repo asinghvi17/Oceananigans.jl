@@ -8,6 +8,7 @@ The array is indexed in with `arr[i, j, k]` and picks from memory at location
 struct MortonArray{T} <: AbstractArray{T, 3}
     underlying_data   :: AbstractArray{T, 1}
     min_axis          :: Int
+    size              :: Tuple
     Nx2               :: Int
     Ny2               :: Int
 end
@@ -19,8 +20,8 @@ using Base: @propagate_inbounds
 @propagate_inbounds Base.lastindex(h::MortonArray)               = lastindex(h.underlying_data)
 @propagate_inbounds Base.lastindex(h::MortonArray, dim)          = lastindex(h.underlying_data, dim)
 
-Base.size(h::MortonArray)      = size(h.underlying_data)
-Base.size(h::MortonArray, dim) = size(h.underlying_data, dim)
+Base.size(h::MortonArray)      = h.underlying_size
+Base.size(h::MortonArray, dim) = h.underlying_size[dim]
 
 function MortonArray(FT, arch, underlying_size)
     Nx, Ny, Nz = underlying_size
@@ -33,7 +34,7 @@ function MortonArray(FT, arch, underlying_size)
 
     min_axis = min(ndigits(Nx2, base = 2), ndigits(Ny2, base = 2), ndigits(Nz2, base = 2))
 
-    return MortonArray(underlying_data, min_axis, Nx2, Ny2)
+    return MortonArray(underlying_data, min_axis, underlying_size, Nx2, Ny2)
 end
 
 """
