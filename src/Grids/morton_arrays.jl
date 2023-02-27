@@ -8,9 +8,9 @@ The array is indexed in with `arr[i, j, k]` and picks from memory at location
 struct MortonArray{T} <: AbstractArray{T, 3}
     underlying_data   :: AbstractArray{T, 1}
     min_axis          :: Int
-    size              :: Tuple
-    Nx2               :: Int
-    Ny2               :: Int
+    underlying_size   :: Tuple
+
+    MortonArray{T}(underlying_data::AbstractArray, min_axis::Int, underlying_size::Tuple) where T = new{T}(underlying_data, min_axis, underlying_size)
 end
 
 using Base: @propagate_inbounds
@@ -30,13 +30,14 @@ function MortonArray(FT, arch, underlying_size)
     Ny2 = Base.nextpow(2, Ny)
     Nz2 = Base.nextpow(2, Nz)
 
-    underlying_data   = zeros(FT, arch, Nx * Ny * Nz)
+    underlying_data  = zeros(FT, arch, Nx * Ny * Nz)
 
     min_axis = min(ndigits(Nx2, base = 2), ndigits(Ny2, base = 2), ndigits(Nz2, base = 2))
 
-    return MortonArray(underlying_data, min_axis, underlying_size, Nx2, Ny2)
+    return MortonArray{FT}(underlying_data, min_axis, underlying_size)
 end
 
+Adapt.adapt_structure(to, mo::MortonArray) = MortonArray(Adapt.adapt(to, mo.underlying_data), mo.min_axis, mo.underlying_size)
 """
     function morton_encode3d(i, j, k, min_axis)
 

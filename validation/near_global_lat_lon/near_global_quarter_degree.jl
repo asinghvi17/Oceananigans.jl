@@ -122,7 +122,7 @@ target_sea_surface_salinity    = S★ = arch_array(arch, S★)
 νz = 5e-3
 κz = 1e-4
 
-convective_adjustment  = RiBasedDiffusivity()
+convective_adjustment  = RiBasedVerticalDiffusivity()
 vertical_diffusivity   = VerticalScalarDiffusivity(VerticallyImplicitTimeDiscretization(), ν=νz, κ=κz)
      
 tracer_advection   = WENO(underlying_grid)
