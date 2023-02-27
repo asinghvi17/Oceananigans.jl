@@ -33,7 +33,7 @@ function MortonArray(FT, arch, underlying_size)
 
     min_axis = min(ndigits(Nx2, base = 2), ndigits(Ny2, base = 2), ndigits(Nz2, base = 2))
 
-    return MortonArray(underlying_data, min_axis, underlying_size, Nx2, Ny2)
+    return MortonArray(underlying_data, min_axis, Nx2, Ny2)
 end
 
 """
@@ -43,7 +43,7 @@ returns the encoded morton index corresponding to a 3D cartesian index (i, j, k)
 `min_axis` is the minimum between the number of bits of the smallest powers
 of 2 larger than the data size
 """
-function morton_encode3d(i, j, k, min_axis, Nx, Ny)
+function morton_encode3d(i, j, k, min_axis)
 	i = i - 1
 	j = j - 1
 	k = k - 1
