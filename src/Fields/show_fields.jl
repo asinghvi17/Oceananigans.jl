@@ -46,8 +46,11 @@ function Base.show(io::IO, field::Field)
         string("├── operand: ", summary(field.operand), "\n",
                "├── status: ", summary(field.status), "\n")
 
-    suffix = string("└── data: ", summary(field.data), "\n",
-                    "    └── ", data_summary(field))
+    suffix = try string("└── data: ", summary(field.data), "\n",
+                        "    └── ", data_summary(field))
+    catch
+        string("└── data: ", summary(field.data))
+    end
 
     print(io, prefix, bcs_str, middle, suffix)
 end
