@@ -87,29 +87,28 @@ function test_immersed_diffusion(Nz, z, time_discretization)
     Δz_min = minimum(underlying_grid.Δzᵃᵃᶜ)
     model_kwargs = (tracers=:c, buoyancy=nothing, velocities=PrescribedVelocityFields())
 
-    full_model     = HydrostaticFreeSurfaceModel(; grid=underlying_grid, closure, model_kwargs...)
+    reference_model = HydrostaticFreeSurfaceModel(; grid=underlying_grid, closure, model_kwargs...)
     immersed_model = HydrostaticFreeSurfaceModel(; grid, closure, model_kwargs...)
 
     initial_temperature(x, y, z) = exp(-z^2 / 0.02)
-    set!(full_model,     c=initial_temperature)
+    set!(reference_model, c=initial_temperature)
     set!(immersed_model, c=initial_temperature)
 
     Δt = Δz_min^2 / closure.κ * 1e-1
 
-    for n = 1:100
-        time_step!(full_model,     Δt)
+    for n = 1:10
+        time_step!(reference_model, Δt)
         time_step!(immersed_model, Δt)
     end
 
     half = Int(grid.Nz/2 + 1)
-    c_full     = interior(full_model.tracers.c)[1, 1, half:end]
+    c_reference = interior(reference_model.tracers.c)[1, 1, half:end]
     c_immersed = interior(immersed_model.tracers.c)[1, 1, half:end]
 
-    return all(c_full .≈ c_immersed)
+    return all(c_reference .≈ c_immersed)
 end
 
-function test_3D_immersed_diffusion(Nz, z, time_discretization)
-    closure = VerticalScalarDiffusivity(time_discretization, ν = 1, κ = 1)
+function run_3D_immersed_diffusion_tests(Nz, z, closure)
 
     # Bathymetry
     b, l, m, u, t = -0.5, -0.2, 0, 0.2, 0.5
@@ -130,41 +129,39 @@ function test_3D_immersed_diffusion(Nz, z, time_discretization)
     Δz_min = minimum(grid.underlying_grid.Δzᵃᵃᶜ)
     model_kwargs = (tracers=:c, buoyancy=nothing, velocities=PrescribedVelocityFields())
 
-    full_model     = HydrostaticFreeSurfaceModel(; grid=underlying_grid, closure, model_kwargs...)
+    reference_model     = HydrostaticFreeSurfaceModel(; grid=underlying_grid, closure, model_kwargs...)
     immersed_model = HydrostaticFreeSurfaceModel(; grid, closure, model_kwargs...)
 
     initial_temperature(x, y, z) = exp(-z^2 / 0.02)
-    set!(full_model,     c=initial_temperature)
+    set!(reference_model, c=initial_temperature)
     set!(immersed_model, c=initial_temperature)
 
     Δt = Δz_min^2 / closure.κ * 1e-1
 
-    for n = 1:100
-        time_step!(full_model    , Δt)
+    for n = 1:10
+        time_step!(reference_model, Δt)
         time_step!(immersed_model, Δt)
     end
 
-    half   = Int(grid.Nz/2 + 1)
+    half = Int(grid.Nz/2 + 1)
 
-    assesment = Array{Bool}(undef, 4)
+    c_reference = interior(reference_model.tracers.c)[3, 3:7, half:end]
+    c_immersed = interior(immersed_model.tracers.c)[3, 3:7, half:end]
+    @test all(c_reference .≈ c_immersed)
 
-    c_full       = interior(full_model.tracers.c)[3, 3:7, half:end]
-    c_immersed   = interior(immersed_model.tracers.c)[3, 3:7, half:end]
-    assesment[1] = all(c_full .≈ c_immersed)
+    c_reference = interior(reference_model.tracers.c)[3:7, 3, half:end]
+    c_immersed = interior(immersed_model.tracers.c)[3:7, 3, half:end]
+    @test all(c_reference .≈ c_immersed)
 
-    c_full       = interior(full_model.tracers.c)[3:7, 3, half:end]
-    c_immersed   = interior(immersed_model.tracers.c)[3:7, 3, half:end]
-    assesment[2] = all(c_full .≈ c_immersed)
+    c_reference = interior(reference_model.tracers.c)[7, 3:7, half:end]
+    c_immersed = interior(immersed_model.tracers.c)[7, 3:7, half:end]
+    @test all(c_reference .≈ c_immersed)
 
-    c_full       = interior(full_model.tracers.c)[7, 3:7, half:end]
-    c_immersed   = interior(immersed_model.tracers.c)[7, 3:7, half:end]
-    assesment[3] = all(c_full .≈ c_immersed)
+    c_reference = interior(reference_model.tracers.c)[3:7, 7, half:end]
+    c_immersed = interior(immersed_model.tracers.c)[3:7, 7, half:end]
+    @test all(c_reference .≈ c_immersed)
 
-    c_full       = interior(full_model.tracers.c)[3:7, 7, half:end]
-    c_immersed   = interior(immersed_model.tracers.c)[3:7, 7, half:end]
-    assesment[4] = all(c_full .≈ c_immersed)
-
-    return all(assesment)
+    return nothing
 end
 
 function passive_tracer_advection_test(timestepper; N=128, κ=1e-12, Nt=100, background_velocity_field=false)
@@ -583,6 +580,12 @@ timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
                                vertical_scalar_diffusivity,
                                implicit_vertical_scalar_diffusivity])
             append!(grids, stretched_grids)
+
+            # Closure tuple case
+            push!(coords, z)
+            push!(grids, RectilinearGrid(arch, size=(1, 1, N), x=(0, 1), y=(0, 1), z=(0, L), topology=(Periodic, Periodic, Bounded)))
+            push!(fieldnames, (:u, :v, :c))
+            push!(closures, (implicit_vertical_scalar_diffusivity, nothing))
                             
             # Run the tests
             for case = 1:length(grids)
@@ -603,13 +606,18 @@ timesteppers = (:QuasiAdamsBashforth2, :RungeKutta3)
 
             Nz, Lz, z₀ = 128, 1, -0.5
             z_regular = (z₀, Lz + z₀)
-            z_stretch = center_clustered_coord(Nz, Lz, z₀)
+            z_stretched = center_clustered_coord(Nz, Lz, z₀)
 
-            for z_coord = (z_regular, z_stretch)
+            for z in (z_regular, z_stretched)
                 @info "  Testing gaussian immersed diffusion for " *
-                      "[$time_discretization, $(z_coord isa Tuple ? "regular" : "stretched")]..."
-                @test test_immersed_diffusion(Nz, z_coord, time_discretization)
-                @test test_3D_immersed_diffusion(Nz, z_coord, time_discretization)
+                      "[$time_discretization, $(z isa Tuple ? "regular" : "stretched")]..."
+                @test test_immersed_diffusion(Nz, z, time_discretization)
+
+                closure = VerticalScalarDiffusivity(time_discretization, ν=1, κ=1)
+                @test run_3D_immersed_diffusion_tests(Nz, z, closure)
+
+                closure = (VerticalScalarDiffusivity(time_discretization, ν=1, κ=1), ScalarDiffusivity())
+                @test run_3D_immersed_diffusion_tests(Nz, z, closure)
             end
         end
     end
