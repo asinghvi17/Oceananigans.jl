@@ -1,7 +1,7 @@
 using Adapt
 using CUDA: CuArray
 using OffsetArrays: OffsetArray
-using Oceananigans.Utils: getnamewrapper
+using Oceananigans.Utils: getnamewrapper, prettysummary
 using Oceananigans.Grids: total_size
 using Oceananigans.Fields: fill_halo_regions!
 using Oceananigans.Architectures: arch_array
@@ -154,6 +154,8 @@ end
 struct GridFittedBoundary{M} <: AbstractGridFittedBoundary
     mask :: M
 end
+
+Base.summary(ib::GridFittedBoundary) = string("GridFittedBoundary with mask ", prettysummary(ib.mask))
 
 @inline _immersed_cell(i, j, k, underlying_grid, ib::GridFittedBoundary{<:AbstractArray}) = @inbounds ib.mask[i, j, k]
 
