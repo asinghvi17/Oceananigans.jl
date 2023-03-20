@@ -40,7 +40,9 @@ end
     FT = eltype(grid)
     N² = ∂z_b(i, j, k, grid, buoyancy, tracers)
     N²⁺ = clip(N²)
-    w★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, e)
+    eᵢ = ℑzᵃᵃᶠ(i, j, k, grid, ϕ⁺, e)
+    eᵐⁱⁿ = closure.minimum_turbulent_kinetic_energy
+    w★ = sqrt(max(eᵐⁱⁿ, eᵢ))
     return ifelse(N²⁺ == 0, FT(Inf), w★ / sqrt(N²⁺))
 end
 
