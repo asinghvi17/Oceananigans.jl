@@ -89,11 +89,21 @@ function hydrostatic_turbulent_kinetic_energy_tendency end
 
 clip(x) = max(zero(x), x)
 
-@inline z_top(i, j, grid)                        = znode(i, j, grid.Nz+1, grid, Center(), Center(), Face())
-@inline z_bottom(i, j,  grid)                    = znode(i, j, 1,         grid, Center(), Center(), Face())
-@inline depthᶜᶜᶠ(i, j, k, grid)                  = z_top(i, j, grid) - znode(i, j, k, grid, Center(), Center(), Face())
-@inline total_depthᶜᶜᵃ(i, j, grid)               = clip(z_top(i, j, grid) - z_bottom(i, j, grid))
-@inline height_above_bottomᶜᶜᶠ(i, j, k, grid)    = znode(i, j, k, grid, Center(), Center(), Face()) - z_bottom(i, j, grid)
+const c = Center()
+const f = Face()
+
+@inline z_top(i, j, grid)                        = znode(i, j, grid.Nz+1, grid, c, c, f)
+@inline z_bottom(i, j,  grid)                    = znode(i, j, 1,         grid, c, c, f)
+
+# These should be clipped:
+# @inline depthᶜᶜᶠ(i, j, k, grid)                  = clip(z_top(i, j, grid) - znode(i, j, k, grid, c, c, f))
+# @inline total_depthᶜᶜᵃ(i, j, grid)               = clip(z_top(i, j, grid) - z_bottom(i, j, grid))
+# @inline height_above_bottomᶜᶜᶠ(i, j, k, grid)    = clip(znode(i, j, k, grid, c, c, f) - z_bottom(i, j, grid))
+
+@inline depthᶜᶜᶠ(i, j, k, grid)                  = z_top(i, j, grid) - znode(i, j, k, grid, c, c, f)
+@inline total_depthᶜᶜᵃ(i, j, grid)               = z_top(i, j, grid) - z_bottom(i, j, grid)
+@inline height_above_bottomᶜᶜᶠ(i, j, k, grid)    = znode(i, j, k, grid, c, c, f) - z_bottom(i, j, grid)
+
 @inline wall_vertical_distanceᶜᶜᶠ(i, j, k, grid) = min(depthᶜᶜᶠ(i, j, k, grid), height_above_bottomᶜᶜᶠ(i, j, k, grid))
 @inline opposite_wall_vertical_distanceᶜᶜᶠ(i, j, k, grid) = max(depthᶜᶜᶠ(i, j, k, grid), height_above_bottomᶜᶜᶠ(i, j, k, grid))
 
