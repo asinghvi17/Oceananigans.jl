@@ -99,16 +99,16 @@ const FlavorOfRBVD = Union{RBVD, RBVDArray}
 @inline viscosity_location(::FlavorOfRBVD)   = (Center(), Center(), Face())
 @inline diffusivity_location(::FlavorOfRBVD) = (Center(), Center(), Face())
 
-@inline viscosity(::FlavorOfRBVD, diffusivities) = diffusivities.ν
-@inline diffusivity(::FlavorOfRBVD, diffusivities, id) = diffusivities.κ
+@inline viscosity(::FlavorOfRBVD, diffusivities) = diffusivities.κᵘ
+@inline diffusivity(::FlavorOfRBVD, diffusivities, id) = diffusivities.κᶜ
 
 with_tracers(tracers, closure::FlavorOfRBVD) = closure
 
 # Note: computing diffusivities at cell centers for now.
 function DiffusivityFields(grid, tracer_names, bcs, closure::FlavorOfRBVD)
-    κ = Field((Center, Center, Face), grid)
-    ν = Field((Center, Center, Face), grid)
-    return (; κ, ν)
+    κᶜ = Field((Center, Center, Face), grid)
+    κᵘ = Field((Center, Center, Face), grid)
+    return (; κᵘ, κᶜ)
 end
 
 function calculate_diffusivities!(diffusivities, closure::FlavorOfRBVD, model)
@@ -202,8 +202,8 @@ end
     κ★ = κ₀ * τ
     ν★ = ν₀ * τ
 
-    @inbounds diffusivities.κ[i, j, k] = κᶜ + κᵉ + κ★
-    @inbounds diffusivities.ν[i, j, k] = ν★
+    @inbounds diffusivities.κᶜ[i, j, k] = κᶜ + κᵉ + κ★
+    @inbounds diffusivities.κᵘ[i, j, k] = ν★
 end
 
 #####

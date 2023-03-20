@@ -23,13 +23,6 @@ import Oceananigans.TurbulenceClosures: immersed_∂ⱼ_τ₁ⱼ,
 
 abstract type AbstractGridFittedBoundary <: AbstractImmersedBoundary end
 
-const GFIBG = ImmersedBoundaryGrid{<:Any, <:Any, <:Any, <:Any, <:Any, <:AbstractGridFittedBoundary}
-
-#####
-##### ImmersedBoundaryGrids require one additional halo to check `inactive_node` for
-##### Faces on the first halo
-#####
-
 #####
 ##### GridFittedBottom (2.5D immersed boundary with modified bottom height)
 #####
@@ -38,6 +31,14 @@ abstract type AbstractGridFittedBottom{H} <: AbstractGridFittedBoundary end
 
 struct CenterImmersedCondition end
 struct InterfaceImmersedCondition end
+
+const GFIBG = ImmersedBoundaryGrid{<:Any, <:Any, <:Any, <:Any, <:Any, <:AbstractGridFittedBoundary}
+const GFBIBG = ImmersedBoundaryGrid{<:Any, <:Any, <:Any, <:Any, <:Any, <:AbstractGridFittedBottom}
+
+#####
+##### ImmersedBoundaryGrids require one additional halo to check `inactive_node` for
+##### Faces on the first halo
+#####
 
 """
     GridFittedBottom(bottom_height, [immersed_condition=CenterImmersedCondition()])
@@ -97,17 +98,20 @@ end
 
 @inline function _immersed_cell(i, j, k, underlying_grid, ib::GridFittedBottom{<:Any, <:InterfaceImmersedCondition})
     z = znode(i, j, k+1, underlying_grid, c, c, f)
-    h = @inbounds ib.bottom_height[i, j]
-    return z <= h
+    zᵇ = @inbounds ib.bottom_height[i, j]
+    return z <= zᵇ
 end
 
 @inline function _immersed_cell(i, j, k, underlying_grid, ib::GridFittedBottom{<:Any, <:CenterImmersedCondition})
     z = znode(i, j, k, underlying_grid, c, c, c)
-    h = @inbounds ib.bottom_height[i, j]
-    return z <= h
+    zᵇ = @inbounds ib.bottom_height[i, j]
+    return z <= zᵇ
 end
 
-@inline z_bottom(i, j, ibg::GFIBG) = @inbounds ibg.immersed_boundary.bottom_height[i, j]
+@inline bottom_cell(i, j, k, ibg::GFBIBG) = !immersed_cell(i, j, k,   ibg.underlying_grid, ibg.immersed_boundary) &
+                                             immersed_cell(i, j, k-1, ibg.underlying_grid, ibg.immersed_boundary)
+
+@inline z_bottom(i, j, ibg::GFBIBG) = @inbounds ibg.immersed_boundary.bottom_height[i, j]
 
 on_architecture(arch, ib::GridFittedBottom) = GridFittedBottom(arch_array(arch, ib.bottom_height))
 Adapt.adapt_structure(to, ib::GridFittedBottom) = GridFittedBottom(adapt(to, ib.bottom_height))     

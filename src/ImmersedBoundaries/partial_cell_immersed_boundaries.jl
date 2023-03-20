@@ -55,9 +55,6 @@ const PCIBG = ImmersedBoundaryGrid{<:Any, <:Any, <:Any, <:Any, <:Any, <:PartialC
 on_architecture(arch, ib::PartialCellBottom) = PartialCellBottom(arch_array(arch, ib.bottom_height), ib.minimum_fractional_Δz)
 Adapt.adapt_structure(to, ib::PartialCellBottom) = PartialCellBottom(adapt(to, ib.bottom_height), ib.minimum_fractional_Δz)     
 
-bottom_cell(i, j, k, ibg::PCIBG) = !immersed_cell(i, j, k,   ibg.underlying_grid, ibg.immersed_boundary) &
-                                    immersed_cell(i, j, k-1, ibg.underlying_grid, ibg.immersed_boundary)
-
 @inline function Δzᶜᶜᶜ(i, j, k, ibg::PCIBG)
     underlying_grid = ibg.underlying_grid
     ib = ibg.immersed_boundary

@@ -41,6 +41,8 @@ import Oceananigans.TurbulenceClosures:
     diffusive_flux_y,
     diffusive_flux_z
 
+# using Oceananigans.ImmersedBoundaries: mask_immersed_field!
+
 struct CATKEVerticalDiffusivity{TD, CL, FT, TKE} <: AbstractScalarDiffusivity{TD, VerticalFormulation}
     mixing_length :: CL
     turbulent_kinetic_energy_equation :: TKE
@@ -246,6 +248,8 @@ function calculate_diffusivities!(diffusivities, closure::FlavorOfCATKE, model)
     return nothing
 end
 
+@inline clip(x) = max(zero(x), x)
+
 @kernel function calculate_CATKE_diffusivities!(diffusivities, grid, closure::FlavorOfCATKE, velocities, tracers, buoyancy, args...)
     i, j, k, = @index(Global, NTuple)
 
@@ -255,9 +259,9 @@ end
     max_K = closure_ij.maximum_diffusivity
 
     @inbounds begin
-        diffusivities.κᵘ[i, j, k] = min(max_K, κuᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
-        diffusivities.κᶜ[i, j, k] = min(max_K, κcᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
-        diffusivities.κᵉ[i, j, k] = min(max_K, κeᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
+        diffusivities.κᵘ[i, j, k] = min(max_K, clip(κuᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...)))
+        diffusivities.κᶜ[i, j, k] = min(max_K, clip(κcᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...)))
+        diffusivities.κᵉ[i, j, k] = min(max_K, clip(κeᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...)))
 
         # "Patankar trick" for buoyancy production (cf Patankar 1980 or Burchard et al. 2003)
         # If buoyancy flux is a _sink_ of TKE, we treat it implicitly.
@@ -282,6 +286,7 @@ end
     eᵐⁱⁿ = closure.minimum_turbulent_kinetic_energy
     return sqrt(max(eᵐⁱⁿ, eᵢ))
 end
+
 @inline is_stableᶜᶜᶠ(i, j, k, grid, tracers, buoyancy) = ∂z_b(i, j, k, grid, buoyancy, tracers) >= 0
 
 @inline function κuᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
@@ -315,7 +320,6 @@ function Base.summary(closure::CATKEVD)
 end
 
 function Base.show(io::IO, closure::FlavorOfCATKE)
-    # └
     print(io, summary(closure))
     print(io, '\n')
     print(io, "    ├── maximum_diffusivity: ", prettysummary(closure.maximum_diffusivity), '\n',
