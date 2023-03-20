@@ -268,11 +268,13 @@ end
         dissipative_buoyancy_flux = sign(wb) * sign(eⁱʲᵏ) < 0
         wb_e = ifelse(dissipative_buoyancy_flux, wb / eⁱʲᵏ, zero(grid))
         
-        diffusivities.Lᵉ[i, j, k] = - wb_e + implicit_dissipation_coefficient(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...)
+        Lᴰ = implicit_dissipation_coefficient(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...)
+        diffusivities.Lᵉ[i, j, k] = - wb_e + Lᴰ
     end
 end
 
-@inline function implicit_linear_coefficient(i, j, k, grid, closure::FlavorOfCATKE{<:VITD}, K, ::Val{id}, args...) where id
+@inline function implicit_linear_coefficient(i, j, k, grid, closure::FlavorOfCATKE{<:VITD},
+                                             c★, K, ::Val{id}, args...) where id
     L = K._tupled_implicit_linear_coefficients[id]
     return @inbounds L[i, j, k]
 end
