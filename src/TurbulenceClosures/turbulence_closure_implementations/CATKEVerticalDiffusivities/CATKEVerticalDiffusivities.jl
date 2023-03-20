@@ -255,9 +255,9 @@ end
     max_K = closure_ij.maximum_diffusivity
 
     @inbounds begin
-        diffusivities.κᵘ[i, j, k] = min(max_K, Kuᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
-        diffusivities.κᶜ[i, j, k] = min(max_K, Kcᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
-        diffusivities.κᵉ[i, j, k] = min(max_K, Keᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
+        diffusivities.κᵘ[i, j, k] = min(max_K, κuᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
+        diffusivities.κᶜ[i, j, k] = min(max_K, κcᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
+        diffusivities.κᵉ[i, j, k] = min(max_K, κeᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, args...))
 
         # "Patankar trick" for buoyancy production (cf Patankar 1980 or Burchard et al. 2003)
         # If buoyancy flux is a _sink_ of TKE, we treat it implicitly.
@@ -284,19 +284,19 @@ end
 end
 @inline is_stableᶜᶜᶠ(i, j, k, grid, tracers, buoyancy) = ∂z_b(i, j, k, grid, buoyancy, tracers) >= 0
 
-@inline function Kuᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+@inline function κuᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓu = momentum_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     return ℓu * u★
 end
 
-@inline function Kcᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+@inline function κcᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓc = tracer_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     return ℓc * u★
 end
 
-@inline function Keᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+@inline function κeᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓe = TKE_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     return ℓe * u★
