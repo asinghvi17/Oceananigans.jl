@@ -78,6 +78,7 @@ Turbulent Kinetic Energy (TKE).
 
 Keyword arguments
 =================
+
   - `maximum_diffusivity`: Maximum value for tracer, momentum, and TKE diffusivities.
                            Used to clip the diffusivity when/if CATKE predicts
                            diffusivities that are too large.
@@ -216,11 +217,14 @@ function DiffusivityFields(grid, tracer_names, bcs, closure::FlavorOfCATKE)
     κᵉ = CenterField(grid, boundary_conditions=bcs.κᵉ)
     Lᵉ = CenterField(grid) #, boundary_conditions=nothing)
 
-    # Secret tuple for getting tracer diffusivities with tuple[tracer_index]
-    _tupled_tracer_diffusivities         = NamedTuple(name => name === :e ? κᵉ : κᶜ          for name in tracer_names)
-    _tupled_implicit_linear_coefficients = NamedTuple(name => name === :e ? Lᵉ : ZeroField() for name in tracer_names)
+    ω = - 1 / closure.negative_turbulent_kinetic_energy_damping_time_scale
 
-    return (; κᵘ, κᶜ, κᵉ, Lᵉ, _tupled_tracer_diffusivities, _tupled_implicit_linear_coefficients)
+    # Secret tuple for getting tracer diffusivities with tuple[tracer_index]
+    _tracer_diffusivities              = NamedTuple(name => name === :e ? κᵉ : κᶜ          for name in tracer_names)
+    _implicit_linear_coefficients      = NamedTuple(name => name === :e ? Lᵉ : ZeroField() for name in tracer_names)
+    _spurious_tke_damping_coefficients = NamedTuple(name => name === :e ? ω  : zero(grid) for name in tracer_names)
+
+    return (; κᵘ, κᶜ, κᵉ, Lᵉ, _tracer_diffusivities, _implicit_linear_coefficients, _spurious_tke_damping_coefficients)
 end        
 
 @inline viscosity_location(::FlavorOfCATKE) = (Center(), Center(), Face())
@@ -248,8 +252,6 @@ function calculate_diffusivities!(diffusivities, closure::FlavorOfCATKE, model)
     return nothing
 end
 
-@inline clip(x) = max(zero(x), x)
-
 @kernel function calculate_CATKE_diffusivities!(diffusivities, grid, closure::FlavorOfCATKE, velocities, tracers, buoyancy, args...)
     i, j, k, = @index(Global, NTuple)
 
@@ -276,9 +278,15 @@ end
     end
 end
 
-@inline function implicit_linear_coefficient(i, j, k, grid, closure::FlavorOfCATKE{<:VITD}, K, ::Val{id}, args...) where id
-    L = K._tupled_implicit_linear_coefficients[id]
-    return @inbounds L[i, j, k]
+@inline function implicit_linear_coefficient(i, j, k, grid, closure::FlavorOfCATKE{<:VITD}, e★, K, ::Val{id}, args...) where id
+    L = K._implicit_linear_coefficients[id]
+    Lᵢ = @inbounds L[i, j, k]
+
+    ω = K._spurious_tke_damping_coefficients[id]
+    eᵢ = @inbounds e★[i, j, k]
+    Lᵢ = ifelse(eᵢ < 0, ω, Lᵢ)
+
+    return Lᵢ 
 end
 
 @inline function turbulent_velocity(i, j, k, grid, closure, e)
@@ -295,8 +303,7 @@ end
     return ℓu * u★
 end
 
-@inline function κcᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
+@inline function κcᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs) u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓc = tracer_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
     return ℓc * u★
 end
@@ -308,7 +315,7 @@ end
 end
 
 @inline viscosity(::FlavorOfCATKE, diffusivities) = diffusivities.κᵘ
-@inline diffusivity(::FlavorOfCATKE, diffusivities, ::Val{id}) where id = diffusivities._tupled_tracer_diffusivities[id]
+@inline diffusivity(::FlavorOfCATKE, diffusivities, ::Val{id}) where id = diffusivities._tracer_diffusivities[id]
     
 #####
 ##### Show

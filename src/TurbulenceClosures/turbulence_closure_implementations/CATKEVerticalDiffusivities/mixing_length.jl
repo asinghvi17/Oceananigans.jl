@@ -117,6 +117,7 @@ end
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
 
     H = total_depthᶜᶜᵃ(i, j, grid)
+
     return min(H, ℓ★)
 end
 

@@ -17,8 +17,6 @@ end
 ##### Terms in the turbulent kinetic energy equation, all at cell centers
 #####
 
-@inline ϕ²(i, j, k, grid, ϕ) = ϕ(i, j, k, grid)^2
-
 @inline ν_∂z_u²(i, j, k, grid, ν, u) = ℑxᶠᵃᵃ(i, j, k, grid, ν) * ∂zᶠᶜᶠ(i, j, k, grid, u)^2
 @inline ν_∂z_v²(i, j, k, grid, ν, v) = ℑyᵃᶠᵃ(i, j, k, grid, ν) * ∂zᶜᶠᶠ(i, j, k, grid, v)^2
 
@@ -91,15 +89,11 @@ end
     #   Because   ∂t e + ⋯ = ⋯ + L e = ⋯ - ϵ,
     #
     #   then      L e = - ϵ
-    #                 = - Cᴰ e³² / ℓ
+    #                 = - e³² / ℓᴰ
     #
-    #   and thus    L = - Cᴰ √e / ℓ .
+    #   and thus    L = - √e / ℓᴰ .
 
-    ω⁺ = sqrt(abs(eᵢ)) / ℓᴰ
-    ω⁻ = 1 / closure.negative_turbulent_kinetic_energy_damping_time_scale
-    ω⁻ = max(ω⁻, ω⁺)
-
-    return - ifelse(eᵢ < 0, ω⁻, ω⁺)
+    return - sqrt(abs(eᵢ)) / ℓᴰ
 end
 
 # Fallbacks for explicit time discretization
