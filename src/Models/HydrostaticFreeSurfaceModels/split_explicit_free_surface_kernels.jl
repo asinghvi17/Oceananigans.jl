@@ -1,12 +1,14 @@
-using KernelAbstractions: @index, @kernel, Event
-using KernelAbstractions.Extras.LoopInfo: @unroll
 using Oceananigans.Grids: topology
 using Oceananigans.Utils
+using Oceananigans.Architectures: device_event
 using Oceananigans.AbstractOperations: Δz  
 using Oceananigans.BoundaryConditions
 using Oceananigans.Operators
 using Oceananigans.ImmersedBoundaries: peripheral_node, immersed_inactive_node,
                                        inactive_node, IBG, c, f
+
+using KernelAbstractions: @index, @kernel, Event
+using KernelAbstractions.Extras.LoopInfo: @unroll
 
 # constants for AB3 time stepping scheme (from https://doi.org/10.1016/j.ocemod.2004.08.002)
 const β = 0.281105
@@ -49,10 +51,10 @@ const μ = 1.0 - δ - γ - ϵ
 
 # Enforce NoFlux conditions for `η★`
 
-@inline δxᶠᵃᵃ_η(i, j, k, grid, ::Type{Bounded},        η★::Function, args...) = ifelse(i == 1, 0.0, δxᶠᵃᵃ(i, j, k, grid, η★, args...))
-@inline δyᵃᶠᵃ_η(i, j, k, grid, ::Type{Bounded},        η★::Function, args...) = ifelse(j == 1, 0.0, δyᵃᶠᵃ(i, j, k, grid, η★, args...))
-@inline δxᶠᵃᵃ_η(i, j, k, grid, ::Type{RightConnected}, η★::Function, args...) = ifelse(i == 1, 0.0, δxᶠᵃᵃ(i, j, k, grid, η★, args...))
-@inline δyᵃᶠᵃ_η(i, j, k, grid, ::Type{RightConnected}, η★::Function, args...) = ifelse(j == 1, 0.0, δyᵃᶠᵃ(i, j, k, grid, η★, args...))
+@inline δxᶠᵃᵃ_η(i, j, k, grid, ::Type{Bounded},        η★::Function, args...) = ifelse(i == 1, 0, δxᶠᵃᵃ(i, j, k, grid, η★, args...))
+@inline δyᵃᶠᵃ_η(i, j, k, grid, ::Type{Bounded},        η★::Function, args...) = ifelse(j == 1, 0, δyᵃᶠᵃ(i, j, k, grid, η★, args...))
+@inline δxᶠᵃᵃ_η(i, j, k, grid, ::Type{RightConnected}, η★::Function, args...) = ifelse(i == 1, 0, δxᶠᵃᵃ(i, j, k, grid, η★, args...))
+@inline δyᵃᶠᵃ_η(i, j, k, grid, ::Type{RightConnected}, η★::Function, args...) = ifelse(j == 1, 0, δyᵃᶠᵃ(i, j, k, grid, η★, args...))
 
 # Enforce Impenetrability conditions for `U★` and `V★`
 
@@ -240,9 +242,9 @@ function initialize_free_surface_state!(free_surface_state, η)
     parent(state.ηᵐ⁻¹) .= parent(η)
     parent(state.ηᵐ⁻²) .= parent(η)
 
-    fill!(state.η̅, 0.0)
-    fill!(state.U̅, 0.0)
-    fill!(state.V̅, 0.0)
+    fill!(state.η̅, 0)
+    fill!(state.U̅, 0)
+    fill!(state.V̅, 0)
 end
 
 @kernel function barotropic_split_explicit_corrector_kernel!(u, v, U̅, V̅, U, V, Hᶠᶜ, Hᶜᶠ)
@@ -266,15 +268,15 @@ function barotropic_split_explicit_corrector!(u, v, free_surface, grid)
     # add in "good" barotropic mode
 
     event = launch!(arch, grid, :xyz, barotropic_split_explicit_corrector_kernel!,
-        u, v, U̅, V̅, U, V, Hᶠᶜ, Hᶜᶠ,
-        dependencies = Event(device(arch)))
+                    u, v, U̅, V̅, U, V, Hᶠᶜ, Hᶜᶠ,
+                    dependencies = device_event(arch))
 
     wait(device(arch), event)
 end
 
 @kernel function _calc_ab2_tendencies!(G⁻, Gⁿ, χ)
     i, j, k = @index(Global, NTuple)
-    @inbounds G⁻[i, j, k] = (1.5 + χ) *  Gⁿ[i, j, k] - G⁻[i, j, k] * (0.5 + χ)
+    @inbounds G⁻[i, j, k] = (1.5 + χ) * Gⁿ[i, j, k] - G⁻[i, j, k] * (0.5 + χ)
 end
 
 """
@@ -291,10 +293,11 @@ end
 function split_explicit_free_surface_step!(free_surface::SplitExplicitFreeSurface, model, Δt, χ, velocities_update)
 
     grid = free_surface.η.grid
+    arch = architecture(grid)
 
     # we start the time integration of η from the average ηⁿ     
-    Gu  = model.timestepper.G⁻.u
-    Gv  = model.timestepper.G⁻.v
+    Gu⁻ = model.timestepper.G⁻.u
+    Gv⁻ = model.timestepper.G⁻.v
     Guⁿ = model.timestepper.Gⁿ.u
     Gvⁿ = model.timestepper.Gⁿ.v
 
@@ -303,7 +306,7 @@ function split_explicit_free_surface_step!(free_surface::SplitExplicitFreeSurfac
     fill_halo_regions!((free_surface.state.U̅, free_surface.state.V̅))
     
     @apply_regionally velocities_update = setup_split_explicit!(free_surface.auxiliary, free_surface.state, free_surface.η, 
-                                                                grid, Gu, Gv, Guⁿ, Gvⁿ, χ, velocities, velocities_update)
+                                                                grid, Gu⁻, Gv⁻, Guⁿ, Gvⁿ, χ, velocities, velocities_update)
 
     fill_halo_regions!((free_surface.auxiliary.Gᵁ, free_surface.auxiliary.Gⱽ))
 
@@ -341,11 +344,11 @@ function iterate_split_explicit!(free_surface, grid, Δt)
     end
 end
 
-function setup_split_explicit!(auxiliary, state, η, grid, Gu, Gv, Guⁿ, Gvⁿ, χ, velocities, velocities_update)
+function setup_split_explicit!(auxiliary, state, η, grid, Gu⁻, Gv⁻, Guⁿ, Gvⁿ, χ, velocities, velocities_update)
     arch = architecture(grid)
 
-    event_Gu = launch!(arch, grid, :xyz, _calc_ab2_tendencies!, Gu, Guⁿ, χ)
-    event_Gv = launch!(arch, grid, :xyz, _calc_ab2_tendencies!, Gv, Gvⁿ, χ)
+    event_Gu = launch!(arch, grid, :xyz, _calc_ab2_tendencies!, Gu⁻, Guⁿ, χ)
+    event_Gv = launch!(arch, grid, :xyz, _calc_ab2_tendencies!, Gv⁻, Gvⁿ, χ)
 
     # reset free surface averages
     initialize_free_surface_state!(state, η)
@@ -353,13 +356,13 @@ function setup_split_explicit!(auxiliary, state, η, grid, Gu, Gv, Guⁿ, Gvⁿ,
     # Wait for predictor velocity update step to complete and mask it if immersed boundary.
     wait(device(arch), MultiEvent(tuple(velocities_update[1]...)))
 
-    masking_events = [mask_immersed_field!(q) for q in velocities]
-    push!(masking_events, mask_immersed_field!(Gu))
-    push!(masking_events, mask_immersed_field!(Gv))
+    masking_events = [mask_immersed_field!(q, blocking=false) for q in velocities]
+    push!(masking_events, mask_immersed_field!(Gu⁻, blocking=false))
+    push!(masking_events, mask_immersed_field!(Gv⁻, blocking=false))
     wait(device(arch), MultiEvent(tuple(masking_events..., event_Gu, event_Gv)))
 
     # Compute barotropic mode of tendency fields
-    barotropic_mode!(auxiliary.Gᵁ, auxiliary.Gⱽ, grid, Gu, Gv)
+    barotropic_mode!(auxiliary.Gᵁ, auxiliary.Gⱽ, grid, Gu⁻, Gv⁻)
 
     return MultiEvent(tuple(velocities_update[2]...))
 end
