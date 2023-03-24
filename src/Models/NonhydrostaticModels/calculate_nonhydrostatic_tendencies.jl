@@ -66,7 +66,8 @@ function calculate_interior_tendency_contributions!(model; dependencies = device
     v_immersed_bc        = velocities.v.boundary_conditions.immersed
     w_immersed_bc        = velocities.w.boundary_conditions.immersed
 
-    start_momentum_kernel_args = (advection,
+    start_momentum_kernel_args = (grid,
+                                  advection,
                                   coriolis,
                                   stokes_drift,
                                   closure)
@@ -85,15 +86,15 @@ function calculate_interior_tendency_contributions!(model; dependencies = device
     only_active_cells = use_only_active_cells(grid)
 
     Gu_event = launch!(arch, grid, :xyz, calculate_Gu!, 
-                       tendencies.u, grid, u_kernel_args;
+                       tendencies.u, u_kernel_args...;
                        dependencies, only_active_cells)
 
     Gv_event = launch!(arch, grid, :xyz, calculate_Gv!, 
-                       tendencies.v, grid, v_kernel_args;
+                       tendencies.v, v_kernel_args...;
                        dependencies, only_active_cells)
 
     Gw_event = launch!(arch, grid, :xyz, calculate_Gw!, 
-                       tendencies.w, grid, w_kernel_args;
+                       tendencies.w, w_kernel_args...;
                        dependencies, only_active_cells)
 
     events = [Gu_event, Gv_event, Gw_event]
@@ -107,15 +108,12 @@ function calculate_interior_tendency_contributions!(model; dependencies = device
         @inbounds c_immersed_bc = tracers[tracer_index].boundary_conditions.immersed
         @inbounds tracer_name = keys(tracers)[tracer_index]
 
-        args = tuple(Val(tracer_index), Val(tracer_name),
-                     start_tracer_kernel_args..., 
-                     c_immersed_bc,
-                     end_tracer_kernel_args...,
-                     forcing, clock)
-
-
-        Gc_event = launch!(arch, grid, :xyz, calculate_Gc!, 
-                           c_tendency, grid, args;
+        Gc_event = launch!(arch, grid, :xyz, calculate_Gc!,
+                           c_tendency, grid, Val(tracer_index), Val(tracer_name),
+                           start_tracer_kernel_args..., 
+                           c_immersed_bc,
+                           end_tracer_kernel_args...,
+                           forcing, clock;
                            dependencies, only_active_cells)
 
         push!(events, Gc_event)
@@ -131,36 +129,36 @@ end
 #####
 
 """ Calculate the right-hand-side of the u-velocity equation. """
-@kernel function calculate_Gu!(Gu, grid, args) 
+@kernel function calculate_Gu!(Gu, args...)
     i, j, k = @index(Global, NTuple)
-    @inbounds Gu[i, j, k] = u_velocity_tendency(i, j, k, grid, args...)
+    @inbounds Gu[i, j, k] = u_velocity_tendency(i, j, k, args...)
 end
 
-@kernel function calculate_Gu!(Gu, grid::ActiveCellsIBG, args) 
+@kernel function calculate_Gu!(Gu, grid::ActiveCellsIBG, args...)
     idx = @index(Global, Linear)
     i, j, k = active_linear_index_to_ntuple(idx, grid)
     @inbounds Gu[i, j, k] = u_velocity_tendency(i, j, k, grid, args...)
 end
 
 """ Calculate the right-hand-side of the v-velocity equation. """
-@kernel function calculate_Gv!(Gv, grid, args) 
+@kernel function calculate_Gv!(Gv, args...)
     i, j, k = @index(Global, NTuple)
-    @inbounds Gv[i, j, k] = v_velocity_tendency(i, j, k, grid, args...)
+    @inbounds Gv[i, j, k] = v_velocity_tendency(i, j, k, args...)
 end
 
-@kernel function calculate_Gv!(Gv, grid::ActiveCellsIBG, args) 
+@kernel function calculate_Gv!(Gv, grid::ActiveCellsIBG, args...)
     idx = @index(Global, Linear)
     i, j, k = active_linear_index_to_ntuple(idx, grid)
     @inbounds Gv[i, j, k] = v_velocity_tendency(i, j, k, grid, args...)
 end
 
 """ Calculate the right-hand-side of the w-velocity equation. """
-@kernel function calculate_Gw!(Gw, grid, args) 
+@kernel function calculate_Gw!(Gw, args...)
     i, j, k = @index(Global, NTuple)
-    @inbounds Gw[i, j, k] = w_velocity_tendency(i, j, k, grid, args...)
+    @inbounds Gw[i, j, k] = w_velocity_tendency(i, j, k, args...)
 end
 
-@kernel function calculate_Gw!(Gw, grid::ActiveCellsIBG, args)
+@kernel function calculate_Gw!(Gw, grid::ActiveCellsIBG, args...)
     idx = @index(Global, Linear)
     i, j, k = active_linear_index_to_ntuple(idx, grid)
     @inbounds Gw[i, j, k] = w_velocity_tendency(i, j, k, grid, args...)
@@ -171,12 +169,12 @@ end
 #####
 
 """ Calculate the right-hand-side of the tracer advection-diffusion equation. """
-@kernel function calculate_Gc!(Gc, grid, args)
+@kernel function calculate_Gc!(Gc, args...)
     i, j, k = @index(Global, NTuple)
-    @inbounds Gc[i, j, k] = tracer_tendency(i, j, k, grid, args...)
+    @inbounds Gc[i, j, k] = tracer_tendency(i, j, k, args...)
 end
 
-@kernel function calculate_Gc!(Gc, grid::ActiveCellsIBG, args) 
+@kernel function calculate_Gc!(Gc, grid::ActiveCellsIBG, args...)
     idx = @index(Global, Linear)
     i, j, k = active_linear_index_to_ntuple(idx, grid)
     @inbounds Gc[i, j, k] = tracer_tendency(i, j, k, grid, args...)
