@@ -52,7 +52,7 @@ function FreeSurface(free_surface::SplitExplicitFreeSurface, velocities, grid::M
         return SplitExplicitFreeSurface(η,
                                         SplitExplicitState(new_grid),
                                         SplitExplicitAuxiliaryFields(new_grid),
-                                        free_surface.gravitational_acceleration,
+                                        eltype(grid)(free_surface.gravitational_acceleration),
                                         free_surface.settings)
 end
 

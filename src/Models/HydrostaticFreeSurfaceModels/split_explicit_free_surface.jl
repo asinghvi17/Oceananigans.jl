@@ -72,7 +72,7 @@ function SplitExplicitFreeSurface(grid; gravitational_acceleration = g_Earth,
     return SplitExplicitFreeSurface(η,
                                     SplitExplicitState(grid),
                                     SplitExplicitAuxiliaryFields(grid),
-                                    gravitational_acceleration,
+                                    eltype(grid)(gravitational_acceleration),
                                     settings
                                     )
 end
