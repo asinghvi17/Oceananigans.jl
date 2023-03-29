@@ -23,28 +23,34 @@ rank   = MPI.Comm_rank(comm)
 Nranks = MPI.Comm_size(comm)
 
 topo = (Bounded, Periodic, Bounded)
-arch = DistributedArch(CPU(); topology = topo, 
+arch = DistributedArch(GPU(); topology = topo, 
                  ranks=(Nranks, 1, 1),
                  use_buffers = true)
 
 Lh = 100kilometers
 Lz = 400meters
 
-grid = RectilinearGrid(arch,
-                       size = (80, 3, 1),
-                       x = (0, Lh), y = (0, Lh), z = (-Lz, 0),
+prec = Float32
+
+ΔL = Lh / 80
+
+grid = RectilinearGrid(arch, prec;
+                       size = (80, 3, 1), halo = (4, 4, 4),
+                       x = collect(0:ΔL:Lh), y = (0, Lh), z = (-Lz, 0),
                        topology = topo)
 
 bottom(x, y) = x > 80kilometers && x < 90kilometers ? 100.0 : -500meters
 grid = ImmersedBoundaryGrid(grid, GridFittedBottom(bottom))
 
-coriolis = FPlane(f = 1e-4)
+coriolis = FPlane(prec, f = 1e-4)
 
 free_surface = SplitExplicitFreeSurface(; substeps = 10)
 
 model = HydrostaticFreeSurfaceModel(; grid,
                                       coriolis = coriolis,
-                                      free_surface = free_surface)
+                                      free_surface = free_surface,
+                                      momentum_advection = WENO(grid),
+                                      tracer_advection = WENO(grid))
 
 gaussian(x, L) = exp(-x^2 / 2L^2)
 
@@ -67,7 +73,7 @@ set!(model, v = vᵍ)
 set!(model, η = ηⁱ)
 
 gravity_wave_speed = sqrt(g * grid.Lz) # hydrostatic (shallow water) gravity wave speed
-wave_propagation_time_scale = model.grid.Δxᶜᵃᵃ / gravity_wave_speed
+wave_propagation_time_scale = model.grid.Δxᶜᵃᵃ[1] / gravity_wave_speed
 simulation = Simulation(model, Δt = 2wave_propagation_time_scale, stop_iteration = 1000)
 
 outputs = Dict()
