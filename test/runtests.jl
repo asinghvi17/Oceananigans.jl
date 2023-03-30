@@ -4,6 +4,8 @@ if CUDA.has_cuda()
     CUDA.versioninfo()
 end
 
+archs = tuple(GPU())
+
 CUDA.allowscalar() do
 
 @testset "Oceananigans" begin
