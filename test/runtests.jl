@@ -1,8 +1,6 @@
 include("dependencies_for_runtests.jl")
 
-if CUDA.has_cuda()
-    CUDA.set_runtime_version!("11.2")
-end
+CUDA.versioninfo()
 
 CUDA.allowscalar() do
 
