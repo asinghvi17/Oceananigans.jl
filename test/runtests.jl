@@ -1,6 +1,8 @@
 include("dependencies_for_runtests.jl")
 
-CUDA.versioninfo()
+if CUDA.has_cuda()
+    CUDA.versioninfo()
+end
 
 CUDA.allowscalar() do
 
