@@ -162,271 +162,271 @@ steps:
       architecture: CPU
     depends_on: "init_cpu"
 
-#   - label: "🦤 gpu general solver tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "general_solvers"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🦤 gpu general solver tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "general_solvers"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🦃 cpu general solver tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "general_solvers"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🦃 cpu general solver tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "general_solvers"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### NonhydrostaticModel and time stepping (part 1)
-# #####
+#####
+##### NonhydrostaticModel and time stepping (part 1)
+#####
 
-#   - label: "🦀 gpu time stepping tests 1"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_1"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🦀 gpu time stepping tests 1"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_1"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🦞 cpu time stepping tests 1"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_1"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🦞 cpu time stepping tests 1"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_1"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### NonhydrostaticModel and time stepping (part 2)
-# #####
+#####
+##### NonhydrostaticModel and time stepping (part 2)
+#####
 
-#   - label: "🦈 gpu time stepping tests 2"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_2"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🦈 gpu time stepping tests 2"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_2"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🐬 cpu time stepping tests 2"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_2"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🐬 cpu time stepping tests 2"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_2"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### NonhydrostaticModel and time stepping (part 3)
-# #####
+#####
+##### NonhydrostaticModel and time stepping (part 3)
+#####
 
-#   - label: "🦟 gpu time stepping tests 3"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_3"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🦟 gpu time stepping tests 3"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_3"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🦗 cpu time stepping tests 3"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "time_stepping_3"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🦗 cpu time stepping tests 3"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "time_stepping_3"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### Turbulence Closures
-# #####
+#####
+##### Turbulence Closures
+#####
 
-#   - label: "🎣 gpu turbulence closures"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "turbulence_closures"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🎣 gpu turbulence closures"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "turbulence_closures"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🎏 cpu turbulence closures"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "turbulence_closures"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🎏 cpu turbulence closures"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "turbulence_closures"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### HydrostaticFreeSurfaceModel
-# #####
+#####
+##### HydrostaticFreeSurfaceModel
+#####
 
-#   - label: "🐙 gpu hydrostatic free surface model tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "hydrostatic_free_surface"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🐙 gpu hydrostatic free surface model tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "hydrostatic_free_surface"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🦑 cpu hydrostatic free surface model tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "hydrostatic_free_surface"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🦑 cpu hydrostatic free surface model tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "hydrostatic_free_surface"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### ShallowWaterModel
-# #####
+#####
+##### ShallowWaterModel
+#####
 
-#   - label: "🦢 gpu shallow water model tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "shallow_water"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🦢 gpu shallow water model tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "shallow_water"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🦆 cpu shallow water model tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "shallow_water"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🦆 cpu shallow water model tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "shallow_water"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### Simulation
-# #####
+#####
+##### Simulation
+#####
 
-#   - label: "🐳 gpu simulation tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "simulation"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🐳 gpu simulation tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "simulation"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🐋 cpu simulation tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "simulation"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🐋 cpu simulation tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "simulation"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### Lagrangian particles tracking
-# #####
+#####
+##### Lagrangian particles tracking
+#####
 
-#   - label: "🍂 gpu lagrangian particles tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "lagrangian"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🍂 gpu lagrangian particles tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "lagrangian"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🍃 cpu lagrangian particles tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "lagrangian"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🍃 cpu lagrangian particles tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "lagrangian"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
-# #####
-# ##### AbstractOperations
-# #####
+#####
+##### AbstractOperations
+#####
 
-#   - label: "👻 gpu abstract operations tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "abstract_operations"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "👻 gpu abstract operations tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "abstract_operations"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🤖 cpu abstract operations tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "abstract_operations"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🤖 cpu abstract operations tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "abstract_operations"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
 # #####
 # ##### Cubed sphere
@@ -455,32 +455,32 @@ steps:
 #       architecture: CPU
 #     depends_on: "init_cpu"
 
-# #####
-# ##### Multi-Region
-# #####
+#####
+##### Multi-Region
+#####
 
-#   - label: "🧅 gpu multi region tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "multi_region"
-#     commands:
-#       - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: GPU
-#     depends_on: "init_gpu"
+  - label: "🧅 gpu multi region tests"
+    env:
+      JULIA_DEPOT_PATH: "$SVERDRUP_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "multi_region"
+    commands:
+      - "$SVERDRUP_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: GPU
+    depends_on: "init_gpu"
 
-#   - label: "🧄 cpu multi region tests"
-#     env:
-#       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
-#       TEST_GROUP: "multi_region"
-#       CUDA_VISIBLE_DEVICES: "-1"
-#     commands:
-#       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
-#     agents:
-#       queue: Oceananigans
-#       architecture: CPU
-#     depends_on: "init_cpu"
+  - label: "🧄 cpu multi region tests"
+    env:
+      JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
+      TEST_GROUP: "multi_region"
+      # CUDA_VISIBLE_DEVICES: "-1"
+    commands:
+      - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
+    agents:
+      queue: Oceananigans
+      architecture: CPU
+    depends_on: "init_cpu"
 
 # #####
 # ##### Distributed/MPI
