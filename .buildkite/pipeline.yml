@@ -108,7 +108,7 @@ steps:
     env:
       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
       TEST_GROUP: "poisson_solvers_1"
-      CUDA_VISIBLE_DEVICES: "-1"
+      # CUDA_VISIBLE_DEVICES: "-1"
     commands:
       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
     agents:
@@ -131,7 +131,7 @@ steps:
     env:
       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
       TEST_GROUP: "poisson_solvers_2"
-      CUDA_VISIBLE_DEVICES: "-1"
+      # CUDA_VISIBLE_DEVICES: "-1"
     commands:
       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
     agents:
@@ -154,7 +154,7 @@ steps:
     env:
       JULIA_DEPOT_PATH: "$TARTARUS_HOME/.julia-$BUILDKITE_BUILD_NUMBER"
       TEST_GROUP: "matrix_poisson_solvers"
-      CUDA_VISIBLE_DEVICES: "-1"
+      # CUDA_VISIBLE_DEVICES: "-1"
     commands:
       - "$TARTARUS_HOME/julia-$JULIA_VERSION/bin/julia -O0 --color=yes --project -e 'using Pkg; Pkg.test()'"
     agents:
