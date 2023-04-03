@@ -116,11 +116,13 @@ acts as a filter for `η`. Values with superscripts `m-1` and `m-2` correspond t
 time steps to allow using a higher-order time stepping scheme, e.g., `AdamsBashforth3Scheme`.
 """
 function SplitExplicitState(grid::AbstractGrid)
-    η̅ = ZFaceField(grid, indices = (:, :, size(grid, 3)+1))
+    k_surface = size(grid, 3)+1
 
-    ηᵐ   = ZFaceField(grid, indices = (:, :, size(grid, 3)+1))
-    ηᵐ⁻¹ = ZFaceField(grid, indices = (:, :, size(grid, 3)+1))
-    ηᵐ⁻² = ZFaceField(grid, indices = (:, :, size(grid, 3)+1))
+    η̅ = ZFaceField(grid, indices = (:, :, k_surface))
+
+    ηᵐ   = ZFaceField(grid, indices = (:, :, k_surface))
+    ηᵐ⁻¹ = ZFaceField(grid, indices = (:, :, k_surface))
+    ηᵐ⁻² = ZFaceField(grid, indices = (:, :, k_surface))
           
     U    = Field((Face, Center, Nothing), grid)
     V    = Field((Center, Face, Nothing), grid)
