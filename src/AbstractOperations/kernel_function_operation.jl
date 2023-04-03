@@ -80,6 +80,16 @@ Adapt.adapt_structure(to, κ::KernelFunctionOperation{LX, LY, LZ}) where {LX, LY
                                         Adapt.adapt(to, κ.grid),
                                         Tuple(Adapt.adapt(to, a) for a in κ.arguments)...)
 
+function Base.summary(kfo::KernelFunctionOperation)
+    LX, LY, LZ = location(kfo)
+    grid_name = typeof(kfo.grid).name.wrapper
+    arch_name = summary(architecture(kfo.grid))
+    return string("KernelFunctionOperation{$LX, $LY, $LZ}",
+                  " of ", prettysummary(kfo.kernel_function, false),
+                  " on ", grid_name,
+                  " on ", arch_name)
+end
+
 Base.show(io::IO, kfo::KernelFunctionOperation) =
     print(io,
       summary(kfo), '\n',
