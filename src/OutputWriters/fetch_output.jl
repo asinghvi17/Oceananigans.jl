@@ -1,6 +1,6 @@
 using CUDA
 
-using Oceananigans.Fields: AbstractField, compute_at!
+using Oceananigans.Fields: AbstractField, compute_at!, ZeroField
 using Oceananigans.LagrangianParticleTracking: LagrangianParticles
 
 # Needed to support `fetch_output` with `model::Nothing`.
@@ -8,8 +8,9 @@ time(model) = model.clock.time
 time(::Nothing) = nothing
 
 fetch_output(output, model) = output(model)
+fetch_output(output::AbstractField, model) = output
 
-function fetch_output(field::AbstractField, model)
+function fetch_output(field::Field, model)
     compute_at!(field, time(model))
     return parent(field)
 end
@@ -21,6 +22,7 @@ function fetch_output(lagrangian_particles::LagrangianParticles, model)
 end
 
 convert_output(output, writer) = output
+convert_output(output::ZeroField, writer) = output
 
 function convert_output(output::AbstractArray, writer)
     if architecture(output) isa GPU
@@ -41,3 +43,4 @@ function fetch_and_convert_output(output, model, writer)
     fetched = fetch_output(output, model)
     return convert_output(fetched, writer)
 end
+

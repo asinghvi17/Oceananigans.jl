@@ -431,7 +431,6 @@ define_output_variable!(dataset, output::AbstractField, name, array_type, compre
 define_output_variable!(dataset, output::WindowedTimeAverage{<:AbstractField}, args...) =
     define_output_variable!(dataset, output.operand, args...)
 
-
 #####
 ##### Write output
 #####

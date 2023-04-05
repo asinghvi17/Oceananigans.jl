@@ -199,11 +199,19 @@ function initialize_jld2_file!(filepath, init, jld2_kw, including, outputs, mode
                 serializeproperty!(file, "serialized/$property", getproperty(model, property))
             end
 
-            # Serialize the location and boundary conditions of each output.
-            for (i, (field_name, field)) in enumerate(pairs(outputs))
-                file["timeseries/$field_name/serialized/location"] = location(field)
-                file["timeseries/$field_name/serialized/indices"] = indices(field)
-                serializeproperty!(file, "timeseries/$field_name/serialized/boundary_conditions", boundary_conditions(field))
+            # Serialize the location and boundary conditions of each Field output.
+            for (name, output) in pairs(outputs)
+                # So location, indices, etc are recorded if the output is a _function_
+                # that returns a Field.
+                field = if output isa AbstractField
+                    output
+                else
+                    output(model)
+                end
+
+                file["timeseries/$name/serialized/location"] = location(field)
+                file["timeseries/$name/serialized/indices"] = indices(field)
+                serializeproperty!(file, "timeseries/$name/serialized/boundary_conditions", boundary_conditions(field))
             end
         end
     catch err

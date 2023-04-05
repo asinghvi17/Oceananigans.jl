@@ -34,6 +34,8 @@ Base.IndexStyle(::AbstractField) = IndexCartesian()
 ##### AbstractField functionality
 #####
 
+Base.eltype(::AbstractField{<:Any, <:Any, <:Any, <:Any, T}) where T = T
+
 "Returns the location `(LX, LY, LZ)` of an `AbstractField{LX, LY, LZ}`."
 @inline location(a) = (Nothing, Nothing, Nothing) # used in AbstractOperations for location inference
 @inline location(::AbstractField{LX, LY, LZ}) where {LX, LY, LZ} = (LX, LY, LZ) # note no instantiation
