@@ -56,8 +56,7 @@ end
 
 @inline dissipation(i, j, k, grid, closure::FlavorOfCATKE{<:VITD}, args...) = zero(grid)
 
-@inline function implicit_dissipation_coefficient(i, j, k, grid, closure::FlavorOfCATKE,
-                                                  velocities, tracers, buoyancy, clock, tracer_bcs)
+@inline function dissipation_length_scaleᶜᶜᶜ(i, j, k, grid, closure::FlavorOfCATKE, velocities, tracers, buoyancy, clock, tracer_bcs)
     e = tracers.e
     FT = eltype(grid)
 
@@ -65,8 +64,8 @@ end
     Cᶜ = closure.turbulent_kinetic_energy_equation.CᶜD
     Cᵉ = closure.turbulent_kinetic_energy_equation.CᵉD
     Cˢᶜ = closure.mixing_length.Cˢᶜ
-    ℓʰ = ℑzᵃᵃᶜ(i, j, k, grid, convective_length_scaleᶜᶜᶠ, closure, Cᶜ, Cᵉ, Cˢᶜ, velocities, tracers, buoyancy, clock, tracer_bcs)
-    #ℓʰ = convective_length_scaleᶜᶜᶜ(i, j, k, grid, closure, Cᶜ, Cᵉ, Cˢᶜ, velocities, tracers, buoyancy, clock, tracer_bcs)
+    #ℓʰ = ℑzᵃᵃᶜ(i, j, k, grid, convective_length_scaleᶜᶜᶠ, closure, Cᶜ, Cᵉ, Cˢᶜ, velocities, tracers, buoyancy, clock, tracer_bcs)
+    ℓʰ = convective_length_scaleᶜᶜᶜ(i, j, k, grid, closure, Cᶜ, Cᵉ, Cˢᶜ, velocities, tracers, buoyancy, clock, tracer_bcs)
 
     # "Stable" dissipation length
     C⁻D = closure.turbulent_kinetic_energy_equation.C⁻D
@@ -77,8 +76,8 @@ end
     σ = scale(Ri, C⁻D, C⁺D, Riᶜ, Riʷ)
 
     Cᵇ = closure.mixing_length.Cᵇ
-    #ℓ★ = σ * stable_length_scaleᶜᶜᶜ(i, j, k, grid, closure, Cᵇ, tracers.e, velocities, tracers, buoyancy)
-    ℓ★ = σ * ℑzᵃᵃᶜ(i, j, k, grid, stable_length_scaleᶜᶜᶠ, closure, Cᵇ, tracers.e, velocities, tracers, buoyancy)
+    ℓ★ = σ * stable_length_scaleᶜᶜᶜ(i, j, k, grid, closure, Cᵇ, tracers.e, velocities, tracers, buoyancy)
+    #ℓ★ = σ * ℑzᵃᵃᶜ(i, j, k, grid, stable_length_scaleᶜᶜᶠ, closure, Cᵇ, tracers.e, velocities, tracers, buoyancy)
 
     ℓʰ = ifelse(isnan(ℓʰ), zero(grid), ℓʰ)
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
@@ -87,7 +86,15 @@ end
     H = total_depthᶜᶜᵃ(i, j, grid)
     ℓᴰ = min(H, ℓ★ + ℓʰ)
 
+    return ℓᴰ
+end
+
+@inline function implicit_dissipation_coefficient(i, j, k, grid, closure::FlavorOfCATKE,
+                                                  velocities, tracers, buoyancy, clock, tracer_bcs)
+
+    e = tracers.e
     eᵢ = @inbounds e[i, j, k]
+    ℓᴰ = dissipation_length_scaleᶜᶜᶜ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, tracer_bcs)
     
     # Note:
     #   Because   ∂t e + ⋯ = ⋯ + L e = ⋯ - ϵ,

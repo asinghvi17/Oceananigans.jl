@@ -215,16 +215,21 @@ function DiffusivityFields(grid, tracer_names, bcs, closure::FlavorOfCATKE)
 
     bcs = merge(default_diffusivity_bcs, bcs)
 
-    κᵘ = ZFaceField(grid, boundary_conditions=bcs.κᵘ)
-    κᶜ = ZFaceField(grid, boundary_conditions=bcs.κᶜ)
-    κᵉ = ZFaceField(grid, boundary_conditions=bcs.κᵉ)
-    Lᵉ = CenterField(grid) #, boundary_conditions=nothing)
+    κᵘ  = ZFaceField(grid, boundary_conditions=bcs.κᵘ)
+    κᶜ  = ZFaceField(grid, boundary_conditions=bcs.κᶜ)
+    κᵉ  = ZFaceField(grid, boundary_conditions=bcs.κᵉ)
+    Lᵉ  = CenterField(grid)
+    e⁻  = CenterField(grid)
+    ℓᴰ⁻ = CenterField(grid)
+    time = Ref(zero(grid))
 
     # Secret tuple for getting tracer diffusivities with tuple[tracer_index]
     _tupled_tracer_diffusivities         = NamedTuple(name => name === :e ? κᵉ : κᶜ          for name in tracer_names)
     _tupled_implicit_linear_coefficients = NamedTuple(name => name === :e ? Lᵉ : ZeroField() for name in tracer_names)
 
-    return (; κᵘ, κᶜ, κᵉ, Lᵉ, _tupled_tracer_diffusivities, _tupled_implicit_linear_coefficients)
+    # 6 auxiliary fields...
+    return (; κᵘ, κᶜ, κᵉ, Lᵉ, e⁻, ℓᴰ⁻, time,
+            _tupled_tracer_diffusivities, _tupled_implicit_linear_coefficients)
 end        
 
 @inline viscosity_location(::FlavorOfCATKE) = (Center(), Center(), Face())
@@ -241,10 +246,23 @@ function calculate_diffusivities!(diffusivities, closure::FlavorOfCATKE, model)
     buoyancy = model.buoyancy
     clock = model.clock
     top_tracer_bcs = NamedTuple(c => tracers[c].boundary_conditions.top for c in propertynames(tracers))
+    time = diffusivities.time
+
+    # Compute "time-step"
+    # TODO: make this work for DateTime
+    if model.clock.iteration == 0
+        # First iteration: set Δt to 0.
+        # This means the mixing length is "stationary" for one time step.
+        Δt = zero(grid)
+    else
+        Δt = model.clock.time - time[]
+    end
+
+    time[] = model.clock.time
 
     event = launch!(arch, grid, :xyz,
                     calculate_CATKE_diffusivities!,
-                    diffusivities, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs,
+                    diffusivities, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs, Δt,
                     dependencies = device_event(arch))
 
     wait(device(arch), event)
@@ -252,60 +270,111 @@ function calculate_diffusivities!(diffusivities, closure::FlavorOfCATKE, model)
     return nothing
 end
 
-@kernel function calculate_CATKE_diffusivities!(diffusivities, grid, closure::FlavorOfCATKE, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+@kernel function calculate_CATKE_diffusivities!(diffusivities, grid, closure::FlavorOfCATKE,
+                                                velocities, tracers, buoyancy, clock, top_tracer_bcs, Δt)
     i, j, k, = @index(Global, NTuple)
 
     # Ensure this works with "ensembles" of closures, in addition to ordinary single closures
     closure_ij = getclosure(i, j, closure)
 
-    max_K = closure_ij.maximum_diffusivity
-
     @inbounds begin
-        diffusivities.κᵘ[i, j, k] = min(max_K, κuᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs))
-        diffusivities.κᶜ[i, j, k] = min(max_K, κcᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs))
-        diffusivities.κᵉ[i, j, k] = min(max_K, κeᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs))
+        # Current and previous turbulent velocity scales
+        e⁻ = diffusivities.e⁻
+        eⁿ = tracers.e
+        w★⁻ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure_ij, e⁻)
+        w★ⁿ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure_ij, eⁿ)
+
+        # Time-scale for mixing length evolution
+        ℓᴰ⁻ = diffusivities.ℓᴰ⁻[i, j, k] 
+        Cᵗ = closure_ij.mixing_length.Cᵗ
+
+        FT = eltype(grid)
+        ϵ = ifelse(ℓᴰ⁻ > 0, Cᵗ * Δt * w★ⁿ / ℓᴰ⁻, Inf)
+
+        # Previous mixing lengths
+        ℓu⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵘ[i, j, k] / w★⁻) 
+        ℓc⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᶜ[i, j, k] / w★⁻)
+        ℓe⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵉ[i, j, k] / w★⁻)
+
+        # Compute "target" mixing lengths
+        ℓu★ = momentum_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+        ℓc★ =   tracer_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+        ℓe★ =      TKE_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+
+        κu★ = w★ⁿ * ℓu★
+        κc★ = w★ⁿ * ℓc★
+        κe★ = w★ⁿ * ℓe★
+
+        # Compute new diffusivities, limited by maximum_diffusivity
+        κu⁺ = ifelse(ϵ == Inf, κu★, (ϵ * κu★ + w★ⁿ * ℓu⁻) / (1 + ϵ)) 
+        κc⁺ = ifelse(ϵ == Inf, κc★, (ϵ * κc★ + w★ⁿ * ℓc⁻) / (1 + ϵ))
+        κe⁺ = ifelse(ϵ == Inf, κe★, (ϵ * κe★ + w★ⁿ * ℓe⁻) / (1 + ϵ))
+
+        # Override new diffusivities when previous mixing lengths are 0
+        κu = ifelse(ℓu⁻ == 0, κu★, κu⁺)  
+        κc = ifelse(ℓc⁻ == 0, κc★, κc⁺)
+        κe = ifelse(ℓe⁻ == 0, κe★, κe⁺)
+
+        # κu = κu★
+        # κc = κc★
+        # κe = κe★
+
+        κ_max = closure_ij.maximum_diffusivity
+
+        diffusivities.κᵘ[i, j, k] = min(κ_max, κu)
+        diffusivities.κᶜ[i, j, k] = min(κ_max, κc)
+        diffusivities.κᵉ[i, j, k] = min(κ_max, κe)
+
+        # Store previous TKE and dissipation mixing length
+        diffusivities.e⁻[i, j, k] = eⁿ[i, j, k]
+        diffusivities.ℓᴰ⁻[i, j, k] = ℑzᵃᵃᶠ(i, j, k, grid, dissipation_length_scaleᶜᶜᶜ, closure_ij,
+                                           velocities, tracers, buoyancy, clock, top_tracer_bcs)
 
         # "Patankar trick" for buoyancy production (cf Patankar 1980 or Burchard et al. 2003)
-        # If buoyancy flux is a _sink_ of TKE, we treat it implicitly.
-        wb = buoyancy_flux(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, diffusivities)
-        eⁱʲᵏ = @inbounds tracers.e[i, j, k]
+        # If buoyancy flux is a _sink_ of TKE (ie, is "dissipative", we treat it implicitly.
+        eⁱʲᵏ = tracers.e[i, j, k]
 
-        # See `buoyancy_flux`
-        dissipative_buoyancy_flux = sign(wb) * sign(eⁱʲᵏ) < 0
-        wb_e = ifelse(dissipative_buoyancy_flux, wb / eⁱʲᵏ, zero(grid))
+        # See `buoyancy_flux` in `turbulent_kinetic_energy_equation.jl`.
+        wb = buoyancy_flux(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, diffusivities)
+        buoyancy_flux_is_dissipative = sign(wb) * sign(eⁱʲᵏ) < 0
+
+        # The contribution of the implicit buoyancy flux to the diagonal part of the tridiagonal solve is `wb / e`.
+        wb_e = ifelse(buoyancy_flux_is_dissipative, wb / eⁱʲᵏ, zero(grid))
         
         diffusivities.Lᵉ[i, j, k] = - wb_e + implicit_dissipation_coefficient(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs)
+
+        # Store previous dissipation mixing length
     end
 end
 
 @inline function implicit_linear_coefficient(i, j, k, grid, closure::FlavorOfCATKE{<:VITD}, K, ::Val{id}, args...) where id
-    L = K._tupled_implicit_linear_coefficients[id]
-    return @inbounds L[i, j, k]
+    Lc = K._tupled_implicit_linear_coefficients[id]
+    return @inbounds Lc[i, j, k]
 end
 
 @inline function turbulent_velocity(i, j, k, grid, closure, e)
     eᵢ = @inbounds e[i, j, k]
     eᵐⁱⁿ = closure.minimum_turbulent_kinetic_energy
-    return sqrt(max(eᵐⁱⁿ, eᵢ))
+    e★ = max(eᵐⁱⁿ, eᵢ)
+    return sqrt(e★)
 end
-@inline is_stableᶜᶜᶠ(i, j, k, grid, tracers, buoyancy) = ∂z_b(i, j, k, grid, buoyancy, tracers) >= 0
 
 @inline function κuᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
+    w★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓu = momentum_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    return ℓu * u★
+    return ℓu * w★
 end
 
 @inline function κcᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
+    w★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓc = tracer_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    return ℓc * u★
+    return ℓc * w★
 end
 
 @inline function κeᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    u★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
+    w★ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure, tracers.e)
     ℓe = TKE_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure, velocities, tracers, buoyancy, clock, top_tracer_bcs)
-    return ℓe * u★
+    return ℓe * w★
 end
 
 @inline viscosity(::FlavorOfCATKE, diffusivities) = diffusivities.κᵘ
@@ -329,6 +398,7 @@ function Base.show(io::IO, closure::FlavorOfCATKE)
               "├── negative_turbulent_kinetic_energy_damping_time_scale: ", prettysummary(closure.negative_turbulent_kinetic_energy_damping_time_scale), '\n',
               "├── minimum_convective_buoyancy_flux: ", prettysummary(closure.minimum_convective_buoyancy_flux), '\n',
               "├── mixing_length: ", prettysummary(closure.mixing_length), '\n',
+              "│   ├── Cᵗ:   ", prettysummary(closure.mixing_length.Cᵗ), '\n',
               "│   ├── Cᵇ:   ", prettysummary(closure.mixing_length.Cᵇ), '\n',
               "│   ├── Cᶜc:  ", prettysummary(closure.mixing_length.Cᶜc), '\n',
               "│   ├── Cᶜe:  ", prettysummary(closure.mixing_length.Cᶜe), '\n',
