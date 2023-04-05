@@ -154,7 +154,7 @@ end
 function cooperative_test!(req)
     done = false
     while !done
-        done, _ = MPI.Test(req, MPI.Status)
+        done = MPI.Test(req)
         yield()
     end
 end
@@ -303,7 +303,7 @@ for side in sides
 
             @debug "Sending " * $side_str * " halo: local_rank=$local_rank, rank_to_send_to=$rank_to_send_to, send_tag=$send_tag"
             
-            send_event = Threads.@spawn begin
+            send_event = Base.Threads.@spawn begin
                 send_req = MPI.Isend(send_buffer, rank_to_send_to, send_tag, arch.communicator)
                 cooperative_test!(send_req)
             end
@@ -335,17 +335,7 @@ for side in sides
             @debug "Receiving " * $side_str * " halo: local_rank=$local_rank, rank_to_recv_from=$rank_to_recv_from, recv_tag=$recv_tag"
             recv_req = MPI.Irecv!(recv_buffer, rank_to_recv_from, recv_tag, arch.communicator)
 
-            recv_event = Threads.@spawn begin
-
-                # range = priority_range()
-                # priority = last(range)
-            
-                # old_stream = stream()
-                # r_flags = Ref{Cuint}()
-                # cuStreamGetFlags(old_stream, r_flags)
-                # flags = CUstream_flags_enum(r_flags[])
-                # new_stream = CuStream(; flags, priority)
-                # stream!(new_stream)
+            recv_event = Base.Threads.@spawn begin
                 priority!(device(arch), :high)
                 cooperative_test!(recv_req)
                 sync_device!(arch)
