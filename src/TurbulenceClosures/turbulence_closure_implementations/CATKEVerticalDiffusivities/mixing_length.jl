@@ -6,7 +6,6 @@ using ..TurbulenceClosures: wall_vertical_distanceᶜᶜᶠ, wall_vertical_dista
 Contains mixing length parameters for CATKE vertical diffusivity.
 """
 Base.@kwdef struct MixingLength{FT}
-    Cᵗ   :: FT = 1.0
     Cᵇ   :: FT = Inf
     Cᶜc  :: FT = 0.0
     Cᶜe  :: FT = 0.0
@@ -21,6 +20,10 @@ Base.@kwdef struct MixingLength{FT}
     C⁺e  :: FT = 1.0
     CRiʷ :: FT = 1.0
     CRiᶜ :: FT = 0.0
+end
+
+Base.@kwdef struct DynamicMixingLengthMemory{FT}
+    Cᵗ :: FT = 1.0
 end
 
 #####

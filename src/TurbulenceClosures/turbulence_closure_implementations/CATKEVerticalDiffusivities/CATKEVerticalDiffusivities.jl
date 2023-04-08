@@ -41,8 +41,9 @@ import Oceananigans.TurbulenceClosures:
     diffusive_flux_y,
     diffusive_flux_z
 
-struct CATKEVerticalDiffusivity{TD, CL, FT, TKE} <: AbstractScalarDiffusivity{TD, VerticalFormulation}
+struct CATKEVerticalDiffusivity{TD, CL, FT, TKE, MT} <: AbstractScalarDiffusivity{TD, VerticalFormulation}
     mixing_length :: CL
+    mixing_length_memory :: MT
     turbulent_kinetic_energy_equation :: TKE
     maximum_diffusivity :: FT
     minimum_turbulent_kinetic_energy :: FT
@@ -51,23 +52,26 @@ struct CATKEVerticalDiffusivity{TD, CL, FT, TKE} <: AbstractScalarDiffusivity{TD
 end
 
 function CATKEVerticalDiffusivity{TD}(mixing_length::CL,
+                                      mixing_length_memory::MT
                                       turbulent_kinetic_energy_equation::TKE,
                                       maximum_diffusivity::FT,
                                       minimum_turbulent_kinetic_energy::FT,
                                       minimum_convective_buoyancy_flux::FT,
-                                      negative_turbulent_kinetic_energy_damping_time_scale::FT) where {TD, CL, TKE, FT}
+                                      negative_turbulent_kinetic_energy_damping_time_scale::FT) where {TD, CL, TKE, FT, MT}
 
-    return CATKEVerticalDiffusivity{TD, CL, FT, TKE}(mixing_length,
-                                                     turbulent_kinetic_energy_equation,
-                                                     maximum_diffusivity,
-                                                     minimum_turbulent_kinetic_energy,
-                                                     minimum_convective_buoyancy_flux,
-                                                     negative_turbulent_kinetic_energy_damping_time_scale)
+    return CATKEVerticalDiffusivity{TD, CL, FT, TKE, MT}(mixing_length,
+                                                         mixing_length_memory,
+                                                         turbulent_kinetic_energy_equation,
+                                                         maximum_diffusivity,
+                                                         minimum_turbulent_kinetic_energy,
+                                                         minimum_convective_buoyancy_flux,
+                                                         negative_turbulent_kinetic_energy_damping_time_scale)
 end
 
 """
     CATKEVerticalDiffusivity(time_discretization = VerticallyImplicitTimeDiscretization(), FT=Float64;
                              mixing_length = MixingLength{FT}(),
+                             mixing_length_memory = nothing,
                              turbulent_kinetic_energy_equation = TurbulentKineticEnergyEquation{FT}(),
                              maximum_diffusivity = Inf,
                              minimum_turbulent_kinetic_energy = zero(FT),
@@ -134,6 +138,7 @@ optimal_mixing_length(FT) = MixingLength(
 
 function CATKEVerticalDiffusivity(time_discretization::TD = VerticallyImplicitTimeDiscretization(), FT=Float64;
                                   mixing_length = optimal_mixing_length(FT),
+                                  mixing_length_memory = nothing,
                                   turbulent_kinetic_energy_equation = optimal_turbulent_kinetic_energy_equation(FT),
                                   maximum_diffusivity = Inf,
                                   minimum_turbulent_kinetic_energy = 0,
@@ -150,9 +155,11 @@ function CATKEVerticalDiffusivity(time_discretization::TD = VerticallyImplicitTi
     end
 
     mixing_length = convert_eltype(FT, mixing_length)
+    mixing_length_memory = convert_eltype(FT, mixing_length_memory)
     turbulent_kinetic_energy_equation = convert_eltype(FT, turbulent_kinetic_energy_equation)
 
     return CATKEVerticalDiffusivity{TD}(mixing_length,
+                                        mixing_length_memory,
                                         turbulent_kinetic_energy_equation,
                                         FT(maximum_diffusivity),
                                         FT(minimum_turbulent_kinetic_energy),
@@ -198,14 +205,19 @@ catke_first(catke1::FlavorOfCATKE, catke2::FlavorOfCATKE) = error("Can't have tw
     return ifelse(N² <= 0, zero(grid), Ri)
 end
 
-for S in (:MixingLength, :TurbulentKineticEnergyEquation)
-    @eval @inline convert_eltype(::Type{FT}, s::$S) where FT = $S{FT}(; Dict(p => getproperty(s, p) for p in propertynames(s))...)
-    @eval @inline convert_eltype(::Type{FT}, s::$S{FT}) where FT = s
+for S in (:MixingLength, :DynamicMixingLengthMemory, :TurbulentKineticEnergyEquation)
+    @eval convert_eltype(::Type{FT}, s::$S) where FT = $S{FT}(; Dict(p => getproperty(s, p) for p in propertynames(s))...)
+    @eval convert_eltype(::Type{FT}, s::$S{FT}) where FT = s
 end
+
+@eval convert_eltype(::Type{FT}, ::Nothing) where FT = nothing
 
 #####
 ##### Diffusivities and diffusivity fields utilities
 #####
+
+hasmemory(closure::CATKEVD) = !isnothing(closure.mixing_length_memory)
+hasmemory(closure::CATKEVDArray) = hasmemory(first(closure))
 
 function DiffusivityFields(grid, tracer_names, bcs, closure::FlavorOfCATKE)
 
@@ -219,9 +231,16 @@ function DiffusivityFields(grid, tracer_names, bcs, closure::FlavorOfCATKE)
     κᶜ  = ZFaceField(grid, boundary_conditions=bcs.κᶜ)
     κᵉ  = ZFaceField(grid, boundary_conditions=bcs.κᵉ)
     Lᵉ  = CenterField(grid)
-    e⁻  = CenterField(grid)
-    ℓᴰ⁻ = CenterField(grid)
-    time = Ref(zero(grid))
+
+    if hasmemory(closure)
+        e⁻  = CenterField(grid)
+        ℓᴰ⁻ = CenterField(grid)
+        time = Ref(zero(grid))
+    else
+        e⁻ = nothing
+        ℓᴰ⁻ = nothing
+        time = nothing
+    end
 
     # Secret tuple for getting tracer diffusivities with tuple[tracer_index]
     _tupled_tracer_diffusivities         = NamedTuple(name => name === :e ? κᵉ : κᶜ          for name in tracer_names)
@@ -279,22 +298,8 @@ end
 
     @inbounds begin
         # Current and previous turbulent velocity scales
-        e⁻ = diffusivities.e⁻
         eⁿ = tracers.e
-        w★⁻ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure_ij, e⁻)
         w★ⁿ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure_ij, eⁿ)
-
-        # Time-scale for mixing length evolution
-        ℓᴰ⁻ = diffusivities.ℓᴰ⁻[i, j, k] 
-        Cᵗ = closure_ij.mixing_length.Cᵗ
-
-        FT = eltype(grid)
-        ϵ = ifelse(ℓᴰ⁻ > 0, Cᵗ * Δt * w★ⁿ / ℓᴰ⁻, Inf)
-
-        # Previous mixing lengths
-        ℓu⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵘ[i, j, k] / w★⁻) 
-        ℓc⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᶜ[i, j, k] / w★⁻)
-        ℓe⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵉ[i, j, k] / w★⁻)
 
         # Compute "target" mixing lengths
         ℓu★ = momentum_mixing_lengthᶜᶜᶠ(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, clock, top_tracer_bcs)
@@ -305,19 +310,37 @@ end
         κc★ = w★ⁿ * ℓc★
         κe★ = w★ⁿ * ℓe★
 
-        # Compute new diffusivities, limited by maximum_diffusivity
-        κu⁺ = ifelse(ϵ == Inf, κu★, (ϵ * κu★ + w★ⁿ * ℓu⁻) / (1 + ϵ)) 
-        κc⁺ = ifelse(ϵ == Inf, κc★, (ϵ * κc★ + w★ⁿ * ℓc⁻) / (1 + ϵ))
-        κe⁺ = ifelse(ϵ == Inf, κe★, (ϵ * κe★ + w★ⁿ * ℓe⁻) / (1 + ϵ))
+        if hasmemory(closure)
+            # Time-scale for mixing length evolution
+            e⁻ = diffusivities.e⁻
+            w★⁻ = ℑzᵃᵃᶠ(i, j, k, grid, turbulent_velocity, closure_ij, e⁻)
 
-        # Override new diffusivities when previous mixing lengths are 0
-        κu = ifelse(ℓu⁻ == 0, κu★, κu⁺)  
-        κc = ifelse(ℓc⁻ == 0, κc★, κc⁺)
-        κe = ifelse(ℓe⁻ == 0, κe★, κe⁺)
+            ℓᴰ⁻ = diffusivities.ℓᴰ⁻[i, j, k] 
+            Cᵗ = closure_ij.mixing_length_memory.Cᵗ
 
-        # κu = κu★
-        # κc = κc★
-        # κe = κe★
+            FT = eltype(grid)
+            ϵ = ifelse(ℓᴰ⁻ > 0, Cᵗ * Δt * w★ⁿ / ℓᴰ⁻, Inf)
+
+            # Previous mixing lengths
+            ℓu⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵘ[i, j, k] / w★⁻) 
+            ℓc⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᶜ[i, j, k] / w★⁻)
+            ℓe⁻ = ifelse(w★⁻ == 0, zero(grid), diffusivities.κᵉ[i, j, k] / w★⁻)
+
+            
+            # Compute new diffusivities, limited by maximum_diffusivity
+            κu⁺ = ifelse(ϵ == Inf, κu★, (ϵ * κu★ + w★ⁿ * ℓu⁻) / (1 + ϵ)) 
+            κc⁺ = ifelse(ϵ == Inf, κc★, (ϵ * κc★ + w★ⁿ * ℓc⁻) / (1 + ϵ))
+            κe⁺ = ifelse(ϵ == Inf, κe★, (ϵ * κe★ + w★ⁿ * ℓe⁻) / (1 + ϵ))
+
+            # Override new diffusivities when previous mixing lengths are 0
+            κu = ifelse(ℓu⁻ == 0, κu★, κu⁺)  
+            κc = ifelse(ℓc⁻ == 0, κc★, κc⁺)
+            κe = ifelse(ℓe⁻ == 0, κe★, κe⁺)
+        else
+            κu = κu★
+            κc = κc★
+            κe = κe★
+        end
 
         κ_max = closure_ij.maximum_diffusivity
 
