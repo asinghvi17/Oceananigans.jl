@@ -19,8 +19,8 @@ grid = RectilinearGrid(size=64, z=(-256, 0), topology=(Flat, Flat, Bounded))
 coriolis = FPlane(f=1e-4)
 
 N² = 1e-6
-Qᵇ = +1e-8
-Qᵘ = -2e-4 #
+Qᵇ = +1e-7
+Qᵘ = -1e-5 #
 
 b_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵇ))
 u_bcs = FieldBoundaryConditions(top = FluxBoundaryCondition(Qᵘ))
@@ -41,12 +41,19 @@ for closure in closures_to_run
     bᵢ(x, y, z) = N² * z
     set!(model, b=bᵢ, e=1e-6)
 
-    simulation = Simulation(model, Δt=10minute, stop_time=48hours)
+    simulation = Simulation(model, Δt=10minute, stop_time=24hours)
 
     closurename = string(nameof(typeof(closure)))
 
+    if closure isa CATKEVerticalDiffusivity
+        κᵉ = model.diffusivity_fields.κᵉ
+    else
+        κᵉ = ZFaceField(grid)
+    end
+
     diffusivities = (κᵘ = model.diffusivity_fields.κᵘ,
-                     κᶜ = model.diffusivity_fields.κᶜ)
+                     κᶜ = model.diffusivity_fields.κᶜ,
+                     κᵉ = κᵉ)
 
     outputs = merge(model.velocities, model.tracers, diffusivities)
 
@@ -74,6 +81,7 @@ v_ts = []
 e_ts = []
 κᶜ_ts = []
 κᵘ_ts = []
+κᵉ_ts = []
 
 for closure in closures_to_run
     closurename = string(nameof(typeof(closure)))
@@ -85,6 +93,7 @@ for closure in closures_to_run
     push!(e_ts, FieldTimeSeries(filepath, "e"))
     push!(κᶜ_ts, FieldTimeSeries(filepath, "κᶜ"))
     push!(κᵘ_ts, FieldTimeSeries(filepath, "κᵘ"))
+    push!(κᵉ_ts, FieldTimeSeries(filepath, "κᵉ"))
 end
 
 b1 = first(b_ts)
@@ -125,6 +134,7 @@ for (i, closure) in enumerate(closures_to_run)
     en = @lift interior(e_ts[i][$n], 1, 1, :)
     κᶜn = @lift interior(κᶜ_ts[i][$n], 1, 1, :)
     κᵘn = @lift interior(κᵘ_ts[i][$n], 1, 1, :)
+    κᵉn = @lift interior(κᵉ_ts[i][$n], 1, 1, :)
     
     closurename = string(nameof(typeof(closure)))
 
@@ -134,6 +144,7 @@ for (i, closure) in enumerate(closures_to_run)
     lines!(axe, en,  zc, label="e, " * closurename, color=colors[i])
     lines!(axκ, κᶜn, zf, label="κᶜ, " * closurename, color=colors[i])
     lines!(axκ, κᵘn, zf, label="κᵘ, " * closurename, linestyle=:dash, color=colors[i])
+    lines!(axκ, κᵉn, zf, label="κᵉ, " * closurename, linestyle=:dot, color=colors[i])
 end
 
 axislegend(axb, position=:lb)
