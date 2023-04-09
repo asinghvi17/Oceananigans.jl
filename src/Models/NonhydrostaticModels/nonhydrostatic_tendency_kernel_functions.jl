@@ -185,6 +185,13 @@ velocity components, tracer fields, and precalculated diffusivities where applic
              + forcings.w(i, j, k, grid, clock, model_fields))
 end
 
+struct Test{C1, C2}
+c :: C1
+C :: C2
+end
+
+@inline Base.getindex(t::Test, i, j, k) = t.c[i, j, k] + t.C[i, j, k]
+
 """
     $(SIGNATURES)
 
@@ -231,9 +238,11 @@ velocity components, tracer fields, and precalculated diffusivities where applic
     @inbounds background_fields_c = background_fields.tracers[tracer_index]
     model_fields = merge(velocities, tracers, auxiliary_fields)
 
-    return ( - div_Uc(i, j, k, grid, advection, velocities, c)
+    #return ( - div_Uc(i, j, k, grid, advection, velocities, Test(c, background_fields_c)),
+    return ( - div_Uc(i, j, k, grid, advection, velocities, (c + background_fields_c)),
+    #return ( - div_Uc(i, j, k, grid, advection, velocities, c)
              - div_Uc(i, j, k, grid, advection, background_fields.velocities, c)
-             - div_Uc(i, j, k, grid, advection, velocities, background_fields_c)
+             #- div_Uc(i, j, k, grid, advection, velocities, background_fields_c)
              - ∇_dot_qᶜ(i, j, k, grid, closure, diffusivities, val_tracer_index, c, clock, model_fields, buoyancy)
              - immersed_∇_dot_qᶜ(i, j, k, grid, c, c_immersed_bc, closure, diffusivities, val_tracer_index, clock, model_fields)
              + biogeochemistry_rhs(i, j, k, grid, biogeochemistry, val_tracer_name, clock, model_fields)
