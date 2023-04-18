@@ -12,8 +12,8 @@ struct PartialCellBottom{H, E} <: AbstractGridFittedBottom{H}
 end
 
 function Base.summary(ib::PartialCellBottom)
-    hmax = maximum(ib.bottom_height)
-    hmin = minimum(ib.bottom_height)
+    hmax = maximum(parent(ib.bottom_height))
+    hmin = minimum(parent(ib.bottom_height))
     return @sprintf("PartialCellBottom(min(h)=%.2e, max(h)=%.2e, ϵ=%.1f)",
                     hmin, hmax, ib.minimum_fractional_Δz)
 end
