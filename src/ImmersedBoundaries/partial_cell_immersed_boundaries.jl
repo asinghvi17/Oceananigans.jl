@@ -29,7 +29,7 @@ Base.show(io::IO, ib::PartialCellBottom) = print(io, summary(ib))
 
 Return an immersed boundary...
 """
-PartialCellBottom(bottom_height; minimum_fractional_Δz=0.1) =
+PartialCellBottom(bottom_height; minimum_fractional_Δz=0.2) =
     PartialCellBottom(bottom_height, minimum_fractional_Δz)
 
 """
