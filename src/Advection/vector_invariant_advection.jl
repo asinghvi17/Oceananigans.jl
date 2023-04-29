@@ -17,7 +17,7 @@ struct VectorInvariant{N, FT, Z, D, ZS, DS} <: AbstractAdvectionScheme{N, FT}
     divergence_stencil :: DS
 
     function VectorInvariant{N, FT}(vorticity_scheme::Z, divergence_scheme::D, vorticity_stencil::ZS, divergence_stencil::DS) where {N, FT, Z, D, ZS, DS}
-        return new{N, FT, Z, D, ZS, DS, V}(vorticity_scheme, divergence_scheme, vorticity_stencil, divergence_stencil)
+        return new{N, FT, Z, D, ZS, DS}(vorticity_scheme, divergence_scheme, vorticity_stencil, divergence_stencil)
     end
 end
 
