@@ -111,7 +111,6 @@ const VectorInvariantEnstrophyConserving = VectorInvariant{<:Any, <:Any, <:Enstr
 const VectorInvariantVorticityUpwind     = VectorInvariant{<:Any, <:Any, <:AbstractUpwindBiasedAdvectionScheme}
 const VectorInvariantVerticalUpwind      = VectorInvariant{<:Any, <:Any, <:Any, <:AbstractUpwindBiasedAdvectionScheme}
 
-
 @inline U_dot_∇u(i, j, k, grid, scheme::VectorInvariant, U) = (
     + horizontal_advection_U(i, j, k, grid, scheme, U.u, U.v)
     + vertical_advection_U(i, j, k, grid, scheme, U.w, U.u)
@@ -190,28 +189,50 @@ end
     return + upwind_biased_product(û, ζᴸ, ζᴿ)
 end
 
-@inbounds function upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w) 
+@inbounds function left_biased_upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w)
     ∂z_u = ∂zᶠᶜᶠ(i, j, k, grid, u) 
     Sδ = scheme.divergence_stencil
     wᴸ =  _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
-    wᴿ = _right_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
-    û  =  ℑzᵃᵃᶠ(i, j, k, grid, u)
-    w̃  = ifelse(û > 0, wᴸ, wᴿ)
-    return w̃ * ∂z_u
+    return wᴸ * ∂z_u
 end
 
-@inbounds function upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w)
+@inbounds function right_biased_upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w)
+    ∂z_u = ∂zᶠᶜᶠ(i, j, k, grid, u) 
+    Sδ = scheme.divergence_stencil
+    wᴸ =  _right_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
+    return wᴸ * ∂z_u
+end
+
+@inbounds function left_biased_upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w)
     ∂z_v = ∂zᶜᶠᶠ(i, j, k, grid, v) 
     Sδ = scheme.divergence_stencil
-    wᴸ =  _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
-    wᴿ = _right_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
-    v̂  =  ℑzᵃᵃᶠ(i, j, k, grid, v)
-    w̃  = ifelse(v̂ > 0, wᴸ, wᴿ)
-    return w̃ * ∂z_v
+    wᴸ =  _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
+    return wᴸ * ∂z_v
 end
 
-@inline vertical_advection_U(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, scheme, u, w) / Azᶠᶜᶜ(i, j, k, grid)
-@inline vertical_advection_V(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, scheme, v, w) / Azᶜᶠᶜ(i, j, k, grid)
+@inbounds function right_biased_upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w)
+    ∂z_v = ∂zᶜᶠᶠ(i, j, k, grid, v) 
+    Sδ = scheme.divergence_stencil
+    wᴸ =  _right_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
+    return wᴸ * ∂z_v
+end
+
+@inbounds function upwind_ζ₂wᶠᶜᶜ(i, j, k, grid, scheme, u, w) 
+    ζ₂wᴸ = ℑzᵃᵃᶜ(i, j, k, grid,  left_biased_upwind_ζ₂wᶠᶜᶠ, scheme, u, w)
+    ζ₂wᴿ = ℑzᵃᵃᶜ(i, j, k, grid, right_biased_upwind_ζ₂wᶠᶜᶠ, scheme, u, w)
+    @inbounds û = u[i, j, k]
+    return ifelse(û > 0, ζ₂wᴸ, ζ₂wᴿ)
+end
+
+@inbounds function upwind_ζ₁wᶜᶠᶜ(i, j, k, grid, scheme, v, w) 
+    ζ₁wᴸ = ℑzᵃᵃᶜ(i, j, k, grid,  left_biased_upwind_ζ₁wᶜᶠᶠ, scheme, v, w)
+    ζ₁wᴿ = ℑzᵃᵃᶜ(i, j, k, grid, right_biased_upwind_ζ₁wᶜᶠᶠ, scheme, v, w)
+    @inbounds v̂ = v[i, j, k]
+    return ifelse(v̂ > 0, ζ₁wᴸ, ζ₁wᴿ)
+end
+
+@inline vertical_advection_U(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, u) =  upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w) 
+@inline vertical_advection_V(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, v) =  upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w) 
 
 ######
 ###### Conservative formulation of momentum advection
