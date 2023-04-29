@@ -249,7 +249,7 @@ end
     wᴸ =  _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
     wᴿ = _right_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
     û  =  ℑzᵃᵃᶠ(i, j, k, grid, u)
-    w̃  = ifelse(û>0, wᴸ, wᴿ)
+    w̃  = ifelse(û > 0, wᴸ, wᴿ)
     return w̃ * ∂z_u
 end
 
@@ -259,12 +259,12 @@ end
     wᴸ =  _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
     wᴿ = _right_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
     v̂  =  ℑzᵃᵃᶠ(i, j, k, grid, v)
-    w̃  = ifelse(v̂>0, wᴸ, wᴿ)
+    w̃  = ifelse(v̂ > 0, wᴸ, wᴿ)
     return w̃ * ∂z_v
 end
 
-@inline vertical_advection_U(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, scheme, U.u, w) / Azᶠᶜᶜ(i, j, k, grid)
-@inline vertical_advection_V(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, scheme, U.v, w) / Azᶜᶠᶜ(i, j, k, grid)
+@inline vertical_advection_U(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, scheme, u, w) / Azᶠᶜᶜ(i, j, k, grid)
+@inline vertical_advection_V(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, scheme, v, w) / Azᶜᶠᶜ(i, j, k, grid)
 
 ######
 ###### Conservative formulation of momentum advection
