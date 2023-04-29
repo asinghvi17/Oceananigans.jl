@@ -264,8 +264,8 @@ end
     return w̃ * ∂z_v
 end
 
-@inline vertical_advection_U(i, j, k, grid, ::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, ζ₂wᶠᶜᶠ, U.u, w) / Azᶠᶜᶜ(i, j, k, grid)
-@inline vertical_advection_V(i, j, k, grid, ::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, ζ₁wᶜᶠᶠ, U.v, w) / Azᶜᶠᶜ(i, j, k, grid)
+@inline vertical_advection_U(i, j, k, grid, ::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, U.u, w) / Azᶠᶜᶜ(i, j, k, grid)
+@inline vertical_advection_V(i, j, k, grid, ::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, U.v, w) / Azᶜᶠᶜ(i, j, k, grid)
 
 ######
 ###### Conservative formulation of momentum advection
