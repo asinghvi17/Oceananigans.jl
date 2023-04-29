@@ -254,7 +254,6 @@ end
 end
 
 @inbounds function upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w)
-    ℑyᵃᶠᵃ(i, j, k, grid, Az_qᶜᶜᶠ, w) * ∂zᶜᶠᶠ(i, j, k, grid, v) 
     ∂z_v = ∂zᶜᶠᶠ(i, j, k, grid, v) 
     Sδ = scheme.divergence_stencil
     wᴸ =  _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
