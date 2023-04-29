@@ -246,8 +246,8 @@ end
 @inbounds function upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w) 
     ∂z_u = ∂zᶠᶜᶠ(i, j, k, grid, u) 
     Sδ = scheme.divergence_stencil
-    wᴸ = _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
-    wᴿ = _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
+    wᴸ =  _left_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
+    wᴿ = _right_biased_interpolate_xᶠᵃᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶜᶠ, Sδ, w)
     û  =  ℑzᵃᵃᶠ(i, j, k, grid, u)
     w̃  = ifelse(û>0, wᴸ, wᴿ)
     return w̃ * ∂z_u
@@ -257,8 +257,8 @@ end
     ℑyᵃᶠᵃ(i, j, k, grid, Az_qᶜᶜᶠ, w) * ∂zᶜᶠᶠ(i, j, k, grid, v) 
     ∂z_v = ∂zᶜᶠᶠ(i, j, k, grid, v) 
     Sδ = scheme.divergence_stencil
-    wᴸ = _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
-    wᴿ = _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
+    wᴸ =  _left_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
+    wᴿ = _right_biased_interpolate_yᵃᶠᵃ(i, j, k, grid, scheme.divergence_scheme, Az_qᶜᶠᶜ, Sδ, w)
     v̂  =  ℑzᵃᵃᶠ(i, j, k, grid, v)
     w̃  = ifelse(v̂>0, wᴸ, wᴿ)
     return w̃ * ∂z_v
