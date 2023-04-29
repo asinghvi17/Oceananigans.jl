@@ -231,8 +231,8 @@ end
     return ifelse(v̂ > 0, ζ₁wᴸ, ζ₁wᴿ)
 end
 
-@inline vertical_advection_U(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, u) =  upwind_ζ₂wᶠᶜᶠ(i, j, k, grid, scheme, u, w) 
-@inline vertical_advection_V(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, v) =  upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w) 
+@inline vertical_advection_U(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, u) =  upwind_ζ₂wᶠᶜᶜ(i, j, k, grid, scheme, u, w) 
+@inline vertical_advection_V(i, j, k, grid, scheme::VectorInvariantVerticalUpwind, w, v) =  upwind_ζ₁wᶜᶠᶜ(i, j, k, grid, scheme, v, w) 
 
 ######
 ###### Conservative formulation of momentum advection
