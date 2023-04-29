@@ -253,7 +253,7 @@ end
     return w̃ * ∂z_u
 end
 
-@inbounds function upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, v, w)
+@inbounds function upwind_ζ₁wᶜᶠᶠ(i, j, k, grid, scheme, v, w)
     ℑyᵃᶠᵃ(i, j, k, grid, Az_qᶜᶜᶠ, w) * ∂zᶜᶠᶠ(i, j, k, grid, v) 
     ∂z_v = ∂zᶜᶠᶠ(i, j, k, grid, v) 
     Sδ = scheme.divergence_stencil
@@ -264,8 +264,8 @@ end
     return w̃ * ∂z_v
 end
 
-@inline vertical_advection_U(i, j, k, grid, ::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, U.u, w) / Azᶠᶜᶜ(i, j, k, grid)
-@inline vertical_advection_V(i, j, k, grid, ::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, U.v, w) / Azᶜᶠᶜ(i, j, k, grid)
+@inline vertical_advection_U(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, u) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₂wᶠᶜᶠ, scheme, U.u, w) / Azᶠᶜᶜ(i, j, k, grid)
+@inline vertical_advection_V(i, j, k, grid, scheme::UpwindFullVectorInvariant, w, v) =  ℑzᵃᵃᶜ(i, j, k, grid, upwind_ζ₁wᶜᶠᶠ, scheme, U.v, w) / Azᶜᶠᶜ(i, j, k, grid)
 
 ######
 ###### Conservative formulation of momentum advection
