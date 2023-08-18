@@ -73,6 +73,6 @@ include("nonhydrostatic_tendency_kernel_functions.jl")
 include("calculate_nonhydrostatic_tendencies.jl")
 include("immersed_pressure_solver.jl")
 
-PressureSolver(arch, ibg::ImmersedBoundaryGrid) = ImmersedPoissonSolver(grid)
+PressureSolver(arch, ibg::ImmersedBoundaryGrid) = ImmersedPoissonSolver(ibg)
 
 end # module
