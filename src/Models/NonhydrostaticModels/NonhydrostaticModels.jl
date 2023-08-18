@@ -29,8 +29,6 @@ PressureSolver(arch, grid::XYRegRectilinearGrid) = FourierTridiagonalPoissonSolv
 PressureSolver(arch, grid::XZRegRectilinearGrid) = FourierTridiagonalPoissonSolver(grid)
 PressureSolver(arch, grid::YZRegRectilinearGrid) = FourierTridiagonalPoissonSolver(grid)
 
-# *Evil grin*
-PressureSolver(arch, ibg::ImmersedBoundaryGrid) = PressureSolver(arch, ibg.underlying_grid)
 
 # fall back
 PressureSolver(arch, grid) = error("None of the implemented pressure solvers for NonhydrostaticModel currently support more than one stretched direction.")
@@ -74,5 +72,7 @@ include("pressure_correction.jl")
 include("nonhydrostatic_tendency_kernel_functions.jl")
 include("calculate_nonhydrostatic_tendencies.jl")
 include("immersed_pressure_solver.jl")
+
+PressureSolver(arch, ibg::ImmersedBoundaryGrid) = ImmersedPoissonSolver(grid)
 
 end # module
