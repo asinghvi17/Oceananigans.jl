@@ -276,7 +276,10 @@ end
     t★ = (ℓᴰ^2 / Qᵇ⁺)^(1/3)
     ϵ = Δt / t★
 
-    @inbounds Qᵇ[i, j, 1] = (Qᵇᵢⱼ + ϵ * Qᵇ★) / (1 + ϵ)
+    Qᵇᵢ = (Qᵇᵢⱼ + ϵ * Qᵇ★) / (1 + ϵ)
+
+    # If t★ → 0 and thus ϵ → ∞, set buoyancy flux equal to target Qᵇ★
+    @inbounds Qᵇ[i, j, 1] = ifelse(ϵ == Inf, Qᵇ★, Qᵇᵢ)
 end
 
 @kernel function compute_CATKE_diffusivities!(diffusivities, grid, closure::FlavorOfCATKE, velocities, tracers, buoyancy)
@@ -320,7 +323,8 @@ end
         # Implicit TKE dissipation
         ω_e = dissipation_rate(i, j, k, grid, closure_ij, velocities, tracers, buoyancy, diffusivities)
         
-        diffusivities.Lᵉ[i, j, k] = - wb_e - ω_e + Q_e
+        # Note that both wb_e and Q_e are strictly negative
+        diffusivities.Lᵉ[i, j, k] = + wb_e - ω_e + Q_e
     end
 end
 

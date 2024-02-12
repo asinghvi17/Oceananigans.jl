@@ -100,15 +100,16 @@ end
     ℓᴰ = max(ℓ★, ℓʰ)
 
     H = total_depthᶜᶜᵃ(i, j, grid)
+
     return min(H, ℓᴰ)
 end
 
 @inline function dissipation_rate(i, j, k, grid, closure::FlavorOfCATKE,
                                   velocities, tracers, buoyancy, diffusivities)
 
+    FT = eltype(grid)
     ℓᴰ = dissipation_length_scaleᶜᶜᶜ(i, j, k, grid, closure, velocities, tracers, buoyancy, diffusivities.Qᵇ)
     e = tracers.e
-    FT = eltype(grid)
     eᵢ = @inbounds e[i, j, k]
     
     # Note:
