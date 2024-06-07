@@ -56,7 +56,8 @@ end
     # Dissipation length
     ℓʰ = ifelse(isnan(ℓʰ), zero(grid), ℓʰ)
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
-    ℓᴰ = max(ℓ★, ℓʰ)
+    #ℓᴰ = max(ℓ★, ℓʰ)
+    ℓᴰ = ℓ★ + ℓʰ
 
     H = total_depthᶜᶜᵃ(i, j, grid)
     return min(H, ℓᴰ)

@@ -230,7 +230,8 @@ end
 
     ℓʰ = ifelse(isnan(ℓʰ), zero(grid), ℓʰ)
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
-    ℓu = max(ℓ★, ℓʰ)
+    #ℓu = max(ℓ★, ℓʰ)
+    ℓu = ℓ★ + ℓʰ
 
     H = total_depthᶜᶜᵃ(i, j, grid)
     return min(H, ℓu)
@@ -250,7 +251,8 @@ end
 
     ℓʰ = ifelse(isnan(ℓʰ), zero(grid), ℓʰ)
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
-    ℓc = max(ℓ★, ℓʰ)
+    #ℓc = max(ℓ★, ℓʰ)
+    ℓc = ℓ★ + ℓʰ
 
     H = total_depthᶜᶜᵃ(i, j, grid)
     return min(H, ℓc)
@@ -270,7 +272,8 @@ end
 
     ℓʰ = ifelse(isnan(ℓʰ), zero(grid), ℓʰ)
     ℓ★ = ifelse(isnan(ℓ★), zero(grid), ℓ★)
-    ℓe = max(ℓ★, ℓʰ)
+    #ℓe = max(ℓ★, ℓʰ)
+    ℓe = ℓ★ + ℓʰ
 
     H = total_depthᶜᶜᵃ(i, j, grid)
     return min(H, ℓe)
