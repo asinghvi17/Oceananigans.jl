@@ -11,8 +11,8 @@ Base.@kwdef struct TKEDissipationEquations{FT}
     Cᵋϵ :: FT = 1.92
     Cᴾϵ :: FT = 1.44
     Cᵇϵ :: FT = -0.65
-    Cᵂu★ :: FT = 1.0
-    CᵂwΔ :: FT = 1.0
+    Cᵂu★ :: FT = 0.0
+    CᵂwΔ :: FT = 0.0
     Cᵂα  :: FT = 0.11
     gravitational_acceleration  :: FT = 9.8065
     minimum_roughness_length :: FT = 1e-4
@@ -215,7 +215,7 @@ end
     Cᵂu★ = parameters.Cᵂu★
     CᵂwΔ = parameters.CᵂwΔ
 
-    return zero(grid) #- Cᵂu★ * u★^3 #- CᵂwΔ * wΔ³
+    return - Cᵂu★ * u★^3 - CᵂwΔ * wΔ³
 end
 
 @inline function top_dissipation_flux(i, j, grid, clock, fields, parameters, closure::FlavorOfTD, buoyancy)
