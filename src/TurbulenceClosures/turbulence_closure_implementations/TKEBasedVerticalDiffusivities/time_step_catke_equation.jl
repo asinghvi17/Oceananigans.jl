@@ -9,7 +9,7 @@ using CUDA
 
 get_time_step(closure::CATKEVerticalDiffusivity) = closure.tke_time_step
 
-function time_step_catke_equation!(model)
+function time_step_catke_equation!(model, diffusivity_fields)
 
     # TODO: properly handle closure tuples
     closure = model.closure
@@ -20,7 +20,6 @@ function time_step_catke_equation!(model)
     Gⁿe = model.timestepper.Gⁿ.e
     G⁻e = model.timestepper.G⁻.e
 
-    diffusivity_fields = model.diffusivity_fields
     κe = diffusivity_fields.κe
     Le = diffusivity_fields.Le
     previous_velocities = diffusivity_fields.previous_velocities
