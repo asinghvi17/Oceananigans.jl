@@ -9,11 +9,7 @@ using CUDA
 
 get_time_step(closure::CATKEVerticalDiffusivity) = closure.tke_time_step
 
-function time_step_catke_equation!(model, diffusivity_fields)
-
-    # TODO: properly handle closure tuples
-    closure = model.closure
-
+function time_step_catke_equation!(model, closure, diffusivity_fields)
     e = model.tracers.e
     arch = model.architecture
     grid = model.grid
