@@ -35,12 +35,12 @@ inner_funcs = vcat(inner_tendency_functions, inner_ivd_functions, diffusive_flux
 
 for (outer_f, inner_f) in zip(outer_funcs, inner_funcs)
     @eval begin
-        @inline $outer_f(i, j, k, grid, closures::Tuple{<:Any}, Ks, args...) =
-                    $inner_f(i, j, k, grid, closures[1], Ks[1], args...)
+        @inline $outer_f(i, j, k, grid, closures::Tuple{<:Any}, Ks, val_id, args...) =
+                    $inner_f(i, j, k, grid, closures[1], Ks[1], val_id, args...)
 
-        @inline $outer_f(i, j, k, grid, closures::Tuple{<:Any, <:Any}, Ks, args...) = (
-                    $inner_f(i, j, k, grid, closures[1], Ks[1], args...)
-                  + $inner_f(i, j, k, grid, closures[2], Ks[2], args...))
+        @inline $outer_f(i, j, k, grid, closures::Tuple{<:Any, <:Any}, Ks, val_id, args...) = (
+                    $inner_f(i, j, k, grid, closures[1], Ks[1], val_id, args...)
+                  + $inner_f(i, j, k, grid, closures[2], Ks[2], val_id, args...))
 
         @inline $outer_f(i, j, k, grid, closures::Tuple{<:Any, <:Any, <:Any}, Ks, args...) = (
                     $inner_f(i, j, k, grid, closures[1], Ks[1], args...)
